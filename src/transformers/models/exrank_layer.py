@@ -20,7 +20,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import pandas as pd
+import numpy as np
 from sklearn.decomposition import PCA
+from .whitebert_utils import whitening_torch_final,whitebert_debug
 # def spectral_norm(w, r=5):
 #     w_shape = torch.shape(w)
 #     in_dim = np.prod(w_shape[:-1]).astype(int)
@@ -148,6 +150,10 @@ class LayerNormImpl(nn.Module):
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
             return (new_input,)
+        elif self.norm_mode == 'whitebert':
+            new_input = whitebert_debug(input)
+            # new_input = whitening_torch_final(input)#[bs,768]
+            return (new_input,)
         elif self.norm_mode == 'rescale':
             mean = input.mean(dim=-1, keepdim=True)
             std = input.std(dim=-1, keepdim=True)
@@ -168,16 +174,29 @@ class LayerNormImpl(nn.Module):
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1)) #[8,128,128]
             return (new_input,gamma)
         elif self.norm_mode == "soft_expand":
+            # s = [0.6,6,200]
+            # s_new = [0.8,7,150]
+            # rn = 150/200
+            # s_output=[0.8/rn,7/rn,150/rn(1)]
             u,s,v = torch.svd(input)
             maxS = torch.max(s,dim=1).values.unsqueeze(-1)
             newS,alpha = self.soft_exp(input,s)#[8,128]
             #TODO(yhq0507): normalize the new_s to maxvalue=1
             maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
-            rescale_number =  maxNewS/maxS #make the maxS unchanged
+             #make the maxS unchanged
+            rescale_number = maxNewS/maxS
             newS = newS/rescale_number
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
             return (new_input,alpha)
+        elif self.norm_mode == "expand_white":
+            cov = torch.matmul(input,torch.transpose(input,1,2))#[bs,seq_len,seq_len]
+            u, s, vh = np.linalg.svd(cov) #[bs,seq_len,seq_len],[seq_len,seq_len][seq_len,seq_len]
+            newS,alpha = self.soft_exp(input,s)
+            rescale_s_dia = torch.diag_embed(1/torch.sqrt(newS),dim1=-2,dim2=-1)
+            W = torch.matmul(u, rescale_s_dia)
+            new_input = torch.matmul(input, W)
+            return (new_input,)
         elif self.norm_mode == "soft_expand_beta":
             u,s,v = torch.svd(input)
             maxS = torch.max(s,dim=1).values.unsqueeze(-1)

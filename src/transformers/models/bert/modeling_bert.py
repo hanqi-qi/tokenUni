@@ -15,7 +15,7 @@
 # limitations under the License.
 """PyTorch BERT model. """
 
-from ..exrank_layer import NormFuncs #import the exrank module
+from ..exrank_layer import NormFuncs
 import math
 import os
 import warnings
@@ -212,6 +212,7 @@ class BertEmbeddings(nn.Module):
             #TODO(yhq): just put the input data to cuda, but not specify the excact one models are, may trigger error...
             # input_ids = input_ids.cuda()
             inputs_embeds = self.word_embeddings(input_ids)
+            
         token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
         embeddings = inputs_embeds + token_type_embeddings
@@ -446,13 +447,17 @@ class BertOutput(nn.Module):
         if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
             old_hidden_states = hidden_states+input_tensor
             hidden_states = self.exrank_layer(hidden_states+input_tensor)
-        elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_every4" and (i_layer%4==0)):
-            hidden_states = self.exrank_layer(hidden_states+input_tensor)
+        elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
+            hidden_states = self.exrank_layer(hidden_states+input_tensor)#[]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
+        elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
+            hidden_states = self.LayerNorm(hidden_states + input_tensor)
+            hidden_states = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
         else:#0-10 layers
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
             old_hidden_states = hidden_states
-        return hidden_states,old_hidden_states
+        #TODO(yhq:0615)
+        return hidden_states,hidden_states
 
 
 class BertLayer(nn.Module):
@@ -648,10 +653,10 @@ class BertEncoder(nn.Module):
         # print(all_hidden_states[0][0,:5,:4])
         # print(all_hidden_states[11][0,:5,:4])
         return BaseModelOutputWithPastAndCrossAttentions(
-            last_hidden_state=hidden_states,
+            last_hidden_state=hidden_states,#[bs,sq_len,dim] or [bs,sq_len,dim]
             past_key_values=next_decoder_cache,
             hidden_states=all_hidden_states,
-            old_hidden_states = all_old_hidden_states,
+            old_hidden_states = all_old_hidden_states,#tuple,len=13
             attentions=all_self_attentions,
             cross_attentions=all_cross_attentions,
         )
@@ -662,11 +667,15 @@ class BertPooler(nn.Module):
         super().__init__()
         self.dense = nn.Linear(config.hidden_size, config.hidden_size)
         self.activation = nn.Tanh()
+        self.config = config
 
     def forward(self, hidden_states):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token.
-        first_token_tensor = hidden_states[:, 0]
+        if self.config.lnv == "whitebert":
+            first_token_tensor = hidden_states
+        else:
+            first_token_tensor = hidden_states[:, 0]
         pooled_output = self.dense(first_token_tensor)
         pooled_output = self.activation(pooled_output)
         return pooled_output
@@ -737,7 +746,7 @@ class BertPreTrainingHeads(nn.Module):
         self.seq_relationship = nn.Linear(config.hidden_size, 2)
 
     def forward(self, sequence_output, pooled_output):
-        prediction_scores = self.predictions(sequence_output)
+        prediction_scores = self.predictions(sequence_output)#
         seq_relationship_score = self.seq_relationship(pooled_output)
         return prediction_scores, seq_relationship_score
 
@@ -1517,7 +1526,7 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
     """,
     BERT_START_DOCSTRING,
 )
-class BertForSequenceClassification(BertPreTrainedModel):
+class BertForSequenceClassification(BertPreTrainedModel):#sentence-level, use the pooled output
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
