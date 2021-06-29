@@ -16,6 +16,7 @@ from sklearn import preprocessing
 from numpy import dot
 from numpy.linalg import norm
 import seaborn as sns
+import torch.nn.functional as F
 
 """Based on the vis_tools, but visualize the eigenvalues/rank derived from the saved_matrix in .npy file. Functions should include as main data(legend):
 1) single output: hist/cdf chart (model,dataset,strategy,output for layers,rank,moments,performance);
@@ -51,6 +52,23 @@ def tokenSimi(tokens_matrix,seqlen=None,nopad=False):
     for i in range(l):
         cls_simi.append(dot(tokens_matrix[0],tokens_matrix[i])/(norm(tokens_matrix[0])*norm(tokens_matrix[i])))
     return sum(simi)/len(simi),sum(cls_simi)/len(cls_simi)
+#TODO(yhq:0629): add metrics evaluating the eigenvalue distribution
+def rbf_kernel(input,unif_t):
+    sq_pdist = torch.pdist(input, p=2).pow(2)
+    uni_loss = sq_pdist.mul(-unif_t).exp().mean().log() #results are negative one, the maximal value is zero, for visualization, using the exp(uni_loss) to transform the range to [0,1]
+    return uni_loss
+
+# def isotropy(input):
+
+#     return 
+
+def Evs(input,k):
+    """calcualte EV_{k}(h) from https://arxiv.org/pdf/2005.02178.pdf"""
+    _,s,_ = torch.svd(input)
+    ek = [s[i]*s[i] for i in range(k)]
+    ed = [s[i]*s[i] for i in range(len(s)-k,len(s))]
+    return sum(ek)/sum(ed)
+
 
 #TODO(yhq0528): 
 def draw_cdf(hidden_outputs,args,n_bins,metrics):

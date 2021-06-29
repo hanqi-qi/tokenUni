@@ -1,5 +1,5 @@
-export TASK_NAME=$4
-export model_name=$5
+export TASK_NAME=$3
+export model_name=$4
 
 CUDA_VISIBLE_DEVICES="2" python run_glue_no_trainer.py \
   --model_name_or_path $model_name \
@@ -15,5 +15,5 @@ CUDA_VISIBLE_DEVICES="2" python run_glue_no_trainer.py \
   --spectral_norm True \
   --exrank_nonlinear relu \
   --vis_step 50 \
-  --ifmask $3 \
+  --ifmask False \
   --seed 2021 \

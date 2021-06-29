@@ -35,7 +35,7 @@ class soft_exponential(nn.Module):
         # initialize alpha
         #TODO(yhq)
         if alpha == None:
-            self.alpha = nn.Parameter(torch.tensor(0.0)) # create a tensor out of alpha
+            self.alpha = nn.Parameter(torch.tensor(-0.6)) # create a tensor out of alpha
         else:
             self.alpha = nn.Parameter(torch.tensor(alpha)) # create a tensor out of alpha
         # self.alpha = nn.Parameter(torch.tensor(0.0))
@@ -64,24 +64,31 @@ class soft_exponential(nn.Module):
         Forward pass of the function.
         Applies the function to the input elementwise.
         '''
-        if (self.alpha == 0.0):
-            fs = s
-            if self.ifmask:
-                return self.mask(input,s,fs),self.alpha
-            else:
-                return fs,self.alpha
+        eps = 1e-7
+        # alpha = -0.2
+        fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
+        return fs,self.alpha
+        # if (self.alpha == 0.0):
+        #     fs = s
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha
 
-        if (self.alpha < 0.0):
-            eps = 1e-7
-            fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
-            if self.ifmask:
-                return self.mask(input,s,fs),self.alpha
-            else:
-                return fs,self.alpha
+        # if (self.alpha < 0.0):
+        #     eps = 1e-7
+        #     #fix the alpha or trainable
+        #     # fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
+        #     alpha = -0.2
+        #     fs = - torch.log(1 - alpha * (s + alpha)+eps) / alpha
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha
 
-        if (self.alpha > 0.0):
-            fs = (torch.exp(self.alpha * s) - 1)/ self.alpha + self.alpha
-            if self.ifmask:
-                return self.mask(input,s,fs),self.alpha
-            else:
-                return fs,self.alpha
+        # if (self.alpha > 0.0):
+        #     fs = (torch.exp(self.alpha * s) - 1)/ self.alpha + self.alpha
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha

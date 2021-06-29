@@ -78,7 +78,7 @@ class ExRank_gx(nn.Module):
     
     def forward(self,input_seq):
         output = self.dropout(input_seq)
-        output = self.LayerNorm(output)        
+        output = self.LayerNorm(output)    
         return output[0]
 
 def load_tf_weights_in_albert(model, config, tf_checkpoint_path):
@@ -400,18 +400,10 @@ class AlbertLayer(nn.Module):
             self.seq_len_dim,
             attention_output[0],
         )
-        if self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and i_layer == self.config.num_hidden_layers-1):
-            ffn_output = self.exrank_layer(ffn_output + attention_output[0])
-            ffn_output = self.full_layer_layer_norm(ffn_output + attention_output[0])
-        elif self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and i_layer == self.config.num_hidden_layers-1):
-            ffn_output = self.exrank_layer(ffn_output + attention_output[0])
-        elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
-            ffn_output = self.full_layer_layer_norm(ffn_output + attention_output[0])
-            ffn_output = self.exrank_layer(ffn_output + attention_output[0])
-        else:
-            ffn_output = self.full_layer_layer_norm(ffn_output + attention_output[0])
 
-        return (ffn_output,) + attention_output[1:]  # add attentions if we output them
+        hidden_states = self.full_layer_layer_norm(ffn_output + attention_output[0])
+
+        return (hidden_states,) + attention_output[1:]  # add attentions if we output them
 
     def ff_chunk(self, attention_output,i_layer):
         ffn_output = self.ffn(attention_output)
@@ -457,6 +449,8 @@ class AlbertTransformer(nn.Module):
         self.config = config
         self.embedding_hidden_mapping_in = nn.Linear(config.embedding_size, config.hidden_size)
         self.albert_layer_groups = nn.ModuleList([AlbertLayerGroup(config) for _ in range(config.num_hidden_groups)])
+        self.exrank_layer = ExRank_gx(config)
+        self.full_layer_layer_norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
 
     def forward(
         self,
@@ -486,7 +480,12 @@ class AlbertTransformer(nn.Module):
                 output_attentions,
                 output_hidden_states,
             )
+            layer_input = hidden_states
             hidden_states = layer_group_output[0]
+
+            if self.config.apply_exrank == "add_last_afterln" and i == self.config.num_hidden_layers-1:
+                hidden_states = self.exrank_layer(hidden_states)
+                hidden_states = self.full_layer_layer_norm(hidden_states+layer_input)
 
             if output_attentions:
                 all_attentions = all_attentions + layer_group_output[-1]

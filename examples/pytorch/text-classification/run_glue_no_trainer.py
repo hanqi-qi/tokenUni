@@ -31,7 +31,9 @@ import datasets
 from datasets import load_dataset, load_metric
 from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
-
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
 from transformers import (
@@ -413,38 +415,38 @@ def main():
     config = AutoConfig.from_pretrained(args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
 
     #TODO(yhq): add customized arguments and use the default ones in Config file.
-    id2label_dict= {
-        "0": "LABEL_0",
-        "1": "LABEL_1",
-        "2": "LABEL_2",
-        "3": "LABEL_3",
-        "4": "LABEL_4",
-        "5": "LABEL_5",
-        "6": "LABEL_6",
-        "7": "LABEL_7",
-        "8": "LABEL_8",
-        "9": "LABEL_9",
-        "10": "LABEL_10",
-        "11": "LABEL_11",
-        "12": "LABEL_12",
-        "13": "LABEL_13"
-    }
-    label2id_dict= {
-        "LABEL_0": 0,
-        "LABEL_1": 1,
-        "LABEL_2": 2,
-        "LABEL_3": 3,
-        "LABEL_4": 4,
-        "LABEL_5": 5,
-        "LABEL_6": 6,
-        "LABEL_7": 7,
-        "LABEL_8": 8,
-        "LABEL_9": 9,
-        "LABEL_10": 10, 
-        "LABEL_11": 11, 
-        "LABEL_12": 12, 
-        "LABEL_13": 13
-    }
+    # id2label_dict= {
+    #     "0": "LABEL_0",
+    #     "1": "LABEL_1",
+    #     "2": "LABEL_2",
+    #     "3": "LABEL_3",
+    #     "4": "LABEL_4",
+    #     "5": "LABEL_5",
+    #     "6": "LABEL_6",
+    #     "7": "LABEL_7",
+    #     "8": "LABEL_8",
+    #     "9": "LABEL_9",
+    #     "10": "LABEL_10",
+    #     "11": "LABEL_11",
+    #     "12": "LABEL_12",
+    #     "13": "LABEL_13"
+    # }
+    # label2id_dict= {
+    #     "LABEL_0": 0,
+    #     "LABEL_1": 1,
+    #     "LABEL_2": 2,
+    #     "LABEL_3": 3,
+    #     "LABEL_4": 4,
+    #     "LABEL_5": 5,
+    #     "LABEL_6": 6,
+    #     "LABEL_7": 7,
+    #     "LABEL_8": 8,
+    #     "LABEL_9": 9,
+    #     "LABEL_10": 10, 
+    #     "LABEL_11": 11, 
+    #     "LABEL_12": 12, 
+    #     "LABEL_13": 13
+    # }
     if args.model_name_or_path=="albert-base-v1":
         config = AlbertConfig(
             lnv = args.lnv,
@@ -460,8 +462,9 @@ def main():
             ifmask = args.ifmask,
             mask_hidden_dim = args.mask_hidden_dim,
             output_hidden_states = True,
-            id2label = id2label_dict,
-            label2id = label2id_dict,
+            # id2label = id2label_dict,
+            # label2id = label2id_dict,
+            num_labels = num_labels,
         )
     elif args.model_name_or_path=="distilbert-base-uncased":
             config = DistilBertConfig(
@@ -476,6 +479,7 @@ def main():
             mask_hidden_dim = args.mask_hidden_dim,
             output_hidden_states = True,
             id2label=id2label_dict,
+            num_labels = num_labels,
             label2id=label2id_dict,
         )
     elif args.model_name_or_path == "roberta-base":
@@ -509,10 +513,11 @@ def main():
             return_dict = True,
             batch_size_yhq  = args.per_device_train_batch_size,
             ifmask = args.ifmask,
+            num_labels = num_labels,
             mask_hidden_dim = args.mask_hidden_dim,
             output_hidden_states = True,
-            id2label=id2label_dict,
-            label2id=label2id_dict,
+            # id2label=id2label_dict,
+            # label2id=label2id_dict,
         )
     else:
         print("Invalid model type!!!")
@@ -544,28 +549,32 @@ def main():
 
     # Some models have set the order of the labels to use, so let's make sure we do use it.
     label_to_id = None
-    # label_to_id = {v: i for i, v in enumerate(label_list)}
-    # if (
-    #     model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id
-    #     and args.task_name is not None
-    #     and not is_regression
-    # ):
-    #     # Some have all caps in their config, some don't.
-    #     label_name_to_id = {k.lower(): v for k, v in model.config.label2id.items()}
-    #     if list(sorted(label_name_to_id.keys())) == list(sorted(label_list)):
-    #         logger.info(
-    #             f"The configuration of the model provided the following label correspondence: {label_name_to_id}. "
-    #             "Using it!"
-    #         )
-    #         label_to_id = {i: label_name_to_id[label_list[i]] for i in range(num_labels)}
-    #     else:
-    #         logger.warning(
-    #             "Your model seems to have been trained with labels, but they don't match the dataset: ",
-    #             f"model labels: {list(sorted(label_name_to_id.keys()))}, dataset labels: {list(sorted(label_list))}."
-    #             "\nIgnoring the model labels as a result.",
-    #         )
-    # elif args.task_name is None:
-    #     label_to_id = {v: i for i, v in enumerate(label_list)}
+    if (
+        model.config.label2id != PretrainedConfig(num_labels=num_labels).label2id
+        and args.task_name is not None
+        and not is_regression
+    ):
+        # Some have all caps in their config, some don't.
+        label_name_to_id = {k.lower(): v for k, v in model.config.label2id.items()}
+        if list(sorted(label_name_to_id.keys())) == list(sorted(label_list)):
+            logger.info(
+                f"The configuration of the model provided the following label correspondence: {label_name_to_id}. "
+                "Using it!"
+            )
+            label_to_id = {i: label_name_to_id[label_list[i]] for i in range(num_labels)}
+        else:
+            logger.warning(
+                "Your model seems to have been trained with labels, but they don't match the dataset: ",
+                f"model labels: {list(sorted(label_name_to_id.keys()))}, dataset labels: {list(sorted(label_list))}."
+                "\nIgnoring the model labels as a result.",
+            )
+    elif args.task_name is None:
+        label_to_id = {v: i for i, v in enumerate(label_list)}
+
+    #TODO(yhq0619):
+    if label_to_id is not None:
+        model.config.label2id = label_to_id
+        model.config.id2label = {id: label for label, id in config.label2id.items()}
 
     padding = "max_length" if args.pad_to_max_length else False
 
@@ -615,6 +624,7 @@ def main():
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
     no_decay = ["bias", "LayerNorm.weight"]
+    no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias"]
     optimizer_grouped_parameters = [
         {
             "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
@@ -625,8 +635,21 @@ def main():
             "weight_decay": 0.0,
         },
     ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
-
+    # optimizer_grouped_parameters = [
+    # {
+    #     "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_fix_weight)],
+    #     "lr":2e-5,
+    #     # "params": [p for n, p in model.named_parameters() if not n=="bert.embeddings.word_embeddings.weight" ],
+    #     # "lr":0,
+    # },
+    # {
+    #     "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_fix_weight)],
+    #     "lr":0,
+    #     # "params": [p for n, p in model.named_parameters() if n=="bert.embeddings.word_embeddings.weight"],
+    #     # "lr":0,
+    # },
+    # ]
+    optimizer = AdamW(optimizer_grouped_parameters, lr = args.learning_rate)
     # Prepare everything with our `accelerator`.
     model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader
@@ -682,8 +705,12 @@ def main():
         start_time = datetime.datetime.now()
         model.train()
         for step, batch in enumerate(train_dataloader):
+            if step == 0:
+                test_batch = batch
+            else:
+                batch = test_batch
             loss_x +=1
-            outputs = model(**batch)
+            outputs = model(**batch)#original is batch
             loss = outputs.loss
             loss = loss / args.gradient_accumulation_steps
             loss_train[str(loss_x)]=loss.item()
@@ -697,10 +724,11 @@ def main():
 
             if completed_steps >= args.max_train_steps:
                 break
-            #TODO(yhq):save the intermediate hidden_states every vis_epoch
-            if step%args.vis_step ==0:
-                hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-                vis_tools.save_matrix(hidden_states_layers,step,args,mode="train")
+            #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
+            #TODO(yhq): whitebert output
+            # if step%args.vis_step ==0:
+            #     hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
+            #     vis_tools.save_matrix(hidden_states_layers,step,args,mode="train")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
 
@@ -712,7 +740,7 @@ def main():
             outputs = model(**batch)
             eval_loss = outputs.loss
             loss_test[str(loss_x)] = eval_loss.item()
-            predictions = outputs.logits.argmax(dim=-1)
+            predictions = outputs.logits.argmax(dim=-1) if not is_regression else outputs.logits.squeeze()
             metric.add_batch(
                 predictions=accelerator.gather(predictions),
                 references=accelerator.gather(batch["labels"]),
