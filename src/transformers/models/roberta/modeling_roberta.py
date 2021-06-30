@@ -377,10 +377,12 @@ class RobertaOutput(nn.Module):
         hidden_states = self.dropout(hidden_states)
         if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):
             hidden_states = self.exrank_layer(hidden_states+input_tensor)
-        elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer == self.config.num_hidden_layers-1)):
+        elif self.config.apply_exrank == "add_last_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and (i_layer == self.config.num_hidden_layers-1)):
             hidden_states = self.exrank_layer(hidden_states+input_tensor)
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
-
+        elif self.config.apply_exrank == "add_last_afterln" or (self.config.apply_exrank == "add_last_afterln" and (i_layer == self.config.num_hidden_layers-1)):
+            hidden_states = self.LayerNorm(hidden_states + input_tensor)       
+            hidden_states = self.exrank_layer(hidden_states)
         else:
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         return hidden_states

@@ -739,14 +739,11 @@ def main():
     completed_steps = 0
     
     #!Train
-    #TODO(yhq0513):repeat for t-test:
-    # results = []
     picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/conll2003/token_uni/{}/{}".format(args.model_name_or_path,args.lnv)
     if os.path.isdir(picdir):
         shutil.rmtree(picdir)
     if not os.path.isdir(picdir):
         os.makedirs(picdir)
-    ifpca = True
     time_list = []
     loss_train,loss_test = {},{}
     loss_x = 0

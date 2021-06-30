@@ -65,7 +65,6 @@ class soft_exponential(nn.Module):
         Applies the function to the input elementwise.
         '''
         eps = 1e-7
-        # alpha = -0.2
         fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
         return fs,self.alpha
         # if (self.alpha == 0.0):

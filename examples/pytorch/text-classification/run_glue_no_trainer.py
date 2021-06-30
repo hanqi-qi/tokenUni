@@ -726,9 +726,9 @@ def main():
                 break
             #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
             #TODO(yhq): whitebert output
-            # if step%args.vis_step ==0:
-            #     hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-            #     vis_tools.save_matrix(hidden_states_layers,step,args,mode="train")
+            if step%args.vis_step ==0:
+                hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
+                vis_tools.save_matrix(hidden_states_layers,step,args,mode="train",timestamp="new")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
 

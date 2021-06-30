@@ -284,7 +284,10 @@ class TransformerBlock(nn.Module):
             ffn_output = self.output_layer_norm(ffn_output + sa_output)
         elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
             ffn_output = self.output_layer_norm(ffn_output + sa_output)
-            ffn_output = self.exrank_layer(ffn_output+sa_output)
+            ffn_output = self.exrank_layer(ffn_output)
+        elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
+            ffn_output = self.output_layer_norm(ffn_output+ sa_output)
+            ffn_output = self.exrank_layer(ffn_output)
         else:
             ffn_output = self.output_layer_norm(ffn_output + sa_output)  # (bs, seq_length, dim)
 

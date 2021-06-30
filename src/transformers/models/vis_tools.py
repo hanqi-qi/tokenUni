@@ -70,14 +70,10 @@ def save_matrix(input_tensor,epoch,config,mode="train",timestamp='new'):
     elif mode == 'eval':
         epoch = "EVAL:"+str(epoch)
     parent_dir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}".format(config.dataset_name,config.model_name_or_path,config.lnv)
-    matrix_path =  "Epoch_{}Apply_{}Nonlinear_{}_{}.npy".format(epoch,config.apply_exrank,config.exrank_nonlinear,timestamp)
+    matrix_path =  "Epoch{}_{}.npy".format(epoch,config.apply_exrank)
     matrix_name = os.path.join(parent_dir,matrix_path)
     if not os.path.isdir(parent_dir):
         os.makedirs(parent_dir)
-    # print("output the saved matrix")
-    # print(W.shape)
-    # print(W[0,0,:10,:3])
-    # print(W[0,10,:10,:3])
     np.save(matrix_name,W) #np.load(OutputTensor)
 
 def PlotEigen(input_tensor,epoch,config,mode="train",predict_metric=None):
