@@ -36,6 +36,9 @@ from tqdm.auto import tqdm
 import datetime
 import numpy as np
 
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
 from transformers import (

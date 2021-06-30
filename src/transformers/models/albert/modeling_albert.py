@@ -644,7 +644,7 @@ class AlbertModel(AlbertPreTrainedModel):
 
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config)
-
+        print("using tokenUni package")
         self.config = config
         self.embeddings = AlbertEmbeddings(config)
         self.encoder = AlbertTransformer(config)

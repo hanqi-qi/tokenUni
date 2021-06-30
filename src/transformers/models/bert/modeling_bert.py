@@ -910,7 +910,7 @@ class BertModel(BertPreTrainedModel):
         self.encoder = BertEncoder(config)
 
         self.pooler = BertPooler(config) if add_pooling_layer else None
-
+        print("using the TokenUni package")
         self.init_weights()
 
     def get_input_embeddings(self):

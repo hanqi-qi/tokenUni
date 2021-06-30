@@ -38,9 +38,12 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
 from tqdm.utils import _text_width
 
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
-from transformers import (
+from transformers import(
     CONFIG_MAPPING,
     MODEL_MAPPING,
     AdamW,

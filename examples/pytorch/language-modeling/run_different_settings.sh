@@ -1,20 +1,16 @@
-for lnv in "soft_expand_beta" "average" "linear"
+for lnv in "soft_expand"
 do 
-    # echo $apply_exrank
-    for ifmask in "True"
+    for apply_exrank in "add_last_afterln" "add_last_beforeln"
     do
         for model_name in "bert-base-uncased" "distilbert-base-uncased" "albert-base-v1" "roberta-base"
         do
-            bash run_mlm_no_trainer.sh "add_every4" $lnv $ifmask $model_name>"./outlog/${model_name}_add_every4-${lnv}-${ifmask}.out" 2>&1
+            bash run_mlm_no_trainer.sh $apply_exrank $lnv $model_name>"./outlog/0630${model_name}_${apply_exrank}-${lnv}.out" 2>&1
         done
     done
 done
 
 for model_name in "roberta-base" "bert-base-uncased" "distilbert-base-uncased" "albert-base-v1" 
 do
-    bash run_mlm_no_trainer.sh "None" "origin" "False" $model_name >"./outlog/${model_name}_None-baseline.out" 2>&1
-
-    # bash run_mlm_no_trainer.sh "add_all" "soft_expand_beta" "True" $model_name >"./outlog/${model_name}-soft_expand_beta-add_all.out" 2>&1
-
+    bash run_mlm_no_trainer.sh "None" "origin" $model_name >"./outlog/0630${model_name}_None-baseline.out" 2>&1
 done
 

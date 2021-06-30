@@ -449,7 +449,7 @@ class DistilBertModel(DistilBertPreTrainedModel):
 
         self.embeddings = Embeddings(config)  # Embeddings
         self.transformer = Transformer(config)  # Encoder
-
+        print("using tokenUni package")
         self.init_weights()
 
     def get_input_embeddings(self):

@@ -1,4 +1,4 @@
-export model_name=$4
+export model_name=$3
 CUDA_VISIBLE_DEVICES="3" python run_qa_no_trainer.py \
   --model_name_or_path $model_name \
   --dataset_name squad \
@@ -11,8 +11,9 @@ CUDA_VISIBLE_DEVICES="3" python run_qa_no_trainer.py \
   --apply_exrank $1 \
   --lnv $2 \
   --spectral_norm True \
-  --ifmask $3 \
+  --ifmask False \
   --exrank_nonlinear relu \
   --vis_step 500 \
   --output_dir /mnt/Data3/hanqiyan/rank_transformers/tmp/debug_squad/$model_name/$2
+  --seed 2021 \
   # --output_dir /home/hanq1warwick/Data/rank_nips/tmp/debug_squad/$model_name/$2

@@ -33,6 +33,9 @@ from datasets import load_dataset, load_metric
 from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
 
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
 from transformers import (
@@ -842,7 +845,6 @@ def main():
     time_list = []
     loss_train = {}
     loss_x = 0
-    print("epoch_nums:%d"%args.num_train_epochs)
     for epoch in range(args.num_train_epochs):
         start_time = datetime.datetime.now()
         # print()
@@ -865,9 +867,9 @@ def main():
                 break
         #TODO(yhq0515):save the model.bin every epoch    
             #TODO(yhq):save the intermediate hidden_states every vis_epoch
-            # if step%args.vis_step ==0:
-        # hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-        # vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train")
+            if step%args.vis_step ==0:
+                hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
+                vis_tools.save_matrix(hidden_states_layers,step,args,mode="train")
     end_time = datetime.datetime.now()
     time_list.append((end_time-start_time).seconds)
     if args.output_dir is not None:
