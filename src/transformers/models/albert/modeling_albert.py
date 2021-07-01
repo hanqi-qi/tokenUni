@@ -484,11 +484,11 @@ class AlbertTransformer(nn.Module):
             hidden_states = layer_group_output[0]
 
             if self.config.apply_exrank == "add_last_afterln" and i == self.config.num_hidden_layers-1:
-                hidden_states = self.exrank_layer(hidden_states)
+                hidden_states = self.exrank_layer(hidden_states+layer_input)
                 hidden_states = self.full_layer_layer_norm(hidden_states+layer_input)
             if self.config.apply_exrank == "add_last_beforeln" and i == self.config.num_hidden_layers-1:
                 hidden_states = self.full_layer_layer_norm(hidden_states+layer_input)
-                hidden_states = self.exrank_layer(hidden_states)     
+                hidden_states = self.exrank_layer(hidden_states+layer_input)     
 
             if output_attentions:
                 all_attentions = all_attentions + layer_group_output[-1]

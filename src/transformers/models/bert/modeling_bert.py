@@ -452,9 +452,9 @@ class BertOutput(nn.Module):
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
-            hidden_states = self.exrank_layer(hidden_states)#input[bs,sq_len,dim],output[bs,dim]
+            hidden_states = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
         elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
-            hidden_states = self.exrank_layer(hidden_states)#input[bs,sq_len,dim],output[bs,dim]
+            hidden_states = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         else:#0-10 layers
             hidden_states = self.LayerNorm(hidden_states + input_tensor)

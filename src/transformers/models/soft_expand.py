@@ -35,7 +35,7 @@ class soft_exponential(nn.Module):
         # initialize alpha
         #TODO(yhq)
         if alpha == None:
-            self.alpha = nn.Parameter(torch.tensor(-0.6)) # create a tensor out of alpha
+            self.alpha = nn.Parameter(torch.tensor(-0.2)) # create a tensor out of alpha
         else:
             self.alpha = nn.Parameter(torch.tensor(alpha)) # create a tensor out of alpha
         # self.alpha = nn.Parameter(torch.tensor(0.0))

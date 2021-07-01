@@ -132,4 +132,3 @@ dmypy.json
 *.out
 *.log
 *.pdf
-*.sh
