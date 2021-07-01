@@ -4,9 +4,9 @@ do
     do
         for model_name in "albert-base-v1" "bert-base-uncased" "distilbert-base-uncased" "roberta-base"
         do
-            for TASK_NAME in "mrpc" "cola"
+            for TASK_NAME in "wnli"
             do
-                bash run_glue_no_trainer.sh $apply_exrank $lnv $TASK_NAME $model_name>"./outlog/0630_v2${model_name}_${TASK_NAME}_${apply_exrank}_${lnv}.out" 2>&1
+                bash run_glue_no_trainer.sh $apply_exrank $lnv $TASK_NAME $model_name>"./outlog/0701_epoch5${model_name}_${TASK_NAME}_${apply_exrank}_${lnv}.out" 2>&1
             done
         done
     done
@@ -14,8 +14,8 @@ done
 
 for model_name in "albert-base-v1" "bert-base-uncased" "distilbert-base-uncased" "roberta-base"
 do
-    for TASK_NAME in "mrpc" "cola"
+    for TASK_NAME in "wnli"
     do 
-        bash run_glue_no_trainer.sh "None" "origin" $TASK_NAME $model_name >"./outlog/0630_v2${model_name}_${TASK_NAME}_None_baseline.out" 2>&1
+        bash run_glue_no_trainer.sh "None" "origin" $TASK_NAME $model_name >"./outlog/0701_epoch5${model_name}_${TASK_NAME}_None_baseline.out" 2>&1
     done
 done
