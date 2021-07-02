@@ -13,7 +13,8 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 from .soft_expand import soft_exponential
-from .soft_expand_beta import soft_exponential_beta
+# from .soft_expand_beta import soft_exponential_beta
+from .soft_transform import soft_yhq
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
@@ -76,7 +77,8 @@ class LayerNormImpl(nn.Module):
         self.ifmask = args.ifmask
         self.llayer = llayer
         self.soft_exp = soft_exponential(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)
-        self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)
+        self.soft_yhq = soft_yhq(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)      
+        # self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)
         if args.spectral_norm == True:
             # print("use spec")
             self.raw_exrank = nn.Linear(self.hidden,self.hidden)
@@ -181,18 +183,30 @@ class LayerNormImpl(nn.Module):
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
             return (new_input,alpha)
-        elif self.norm_mode == "soft_expand_beta":
+        elif self.norm_mode == "soft_transform":
             u,s,v = torch.svd(input)
             maxS = torch.max(s,dim=1).values.unsqueeze(-1)
-            newS,alpha = self.soft_exp_beta(input,s)#
-            # if alpha.item()>-0.5 or alpha.item()<-0.5:
-                # print(alpha.item())
+            newS,alpha = self.soft_yhq(input,s)#[8,128]
+            #TODO(yhq0507): normalize the new_s to maxvalue=1
             maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
-            rescale_number =  maxNewS/maxS #make the maxS unchanged
+             #make the maxS unchanged
+            rescale_number = maxNewS/maxS
             newS = newS/rescale_number
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            return (new_input,alpha)
+            return (new_input,alpha) 
+        # elif self.norm_mode == "soft_expand_beta":
+        #     u,s,v = torch.svd(input)
+        #     maxS = torch.max(s,dim=1).values.unsqueeze(-1)
+        #     newS,alpha = self.soft_exp_beta(input,s)#
+        #     # if alpha.item()>-0.5 or alpha.item()<-0.5:
+        #         # print(alpha.item())
+        #     maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
+        #     rescale_number =  maxNewS/maxS #make the maxS unchanged
+        #     newS = newS/rescale_number
+        #     rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
+        #     new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
+        #     return (new_input,alpha)
         else:
             return (input,)
 
