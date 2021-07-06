@@ -1,7 +1,7 @@
 export TASK_NAME=$3
 export model_name=$4
 
-CUDA_VISIBLE_DEVICES="0" python run_glue_no_trainer.py \
+CUDA_VISIBLE_DEVICES="1" python run_glue_no_trainer.py \
   --model_name_or_path $model_name \
   --task_name $TASK_NAME \
   --dataset_name $TASK_NAME \
@@ -17,3 +17,5 @@ CUDA_VISIBLE_DEVICES="0" python run_glue_no_trainer.py \
   --vis_step 50 \
   --ifmask False \
   --seed 2021 \
+  --decay_alpha $5 \
+  --alpha_lr $6 \

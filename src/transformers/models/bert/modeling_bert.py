@@ -172,7 +172,7 @@ class ExRank_gx(nn.Module):
     def forward(self,input_seq):
         output = self.dropout(input_seq)
         output = self.LayerNorm(output)        
-        return output[0]
+        return output[0],output[1]
 
 class BertEmbeddings(nn.Module):
     """Construct the embeddings from word, position and token_type embeddings."""
@@ -446,21 +446,24 @@ class BertOutput(nn.Module):
         #TODO(yhq0512):
         if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
             old_hidden_states = hidden_states+input_tensor
-            hidden_states = self.exrank_layer(hidden_states+input_tensor)
+            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
         elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
-            hidden_states = self.exrank_layer(hidden_states+input_tensor)#[]
+            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
-            hidden_states = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+            hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
         elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
-            hidden_states = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         else:#0-10 layers
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
-            old_hidden_states = hidden_states
+            # old_hidden_states = hidden_states
         #TODO(yhq:0615)
-        return hidden_states,hidden_states
+        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
+            return (hidden_states,alpha)
+        else:
+            return (hidden_states,)
 
 
 class BertLayer(nn.Module):
@@ -530,22 +533,20 @@ class BertLayer(nn.Module):
             cross_attn_present_key_value = cross_attention_outputs[-1]
             present_key_value = present_key_value + cross_attn_present_key_value
         #TODO(yhq): modify this function to achieve settings for various layers
-        layer_output,old_layer_output = apply_chunking_to_forward(
+        layer_output = apply_chunking_to_forward(
             self.feed_forward_chunk, i_layer, self.chunk_size_feed_forward, self.seq_len_dim, attention_output)
-        outputs = (layer_output,) + outputs #tuple with one element, the single layer output
+        outputs = (layer_output[0],) + outputs #tuple with one element, the single layer output
         #TODO(yhq): add outputs before eigenvalue shift
-        old_outputs = (old_layer_output,)+outputs
         # if decoder, return the attn key/values as the last output
         if self.is_decoder:
             outputs = outputs + (present_key_value,)
-            old_outputs = old_outputs + (present_key_value,)
-        return outputs,old_outputs
+        return outputs,layer_output[-1]
 
     def feed_forward_chunk(self, attention_output,i_layer):#
         intermediate_output = self.intermediate(attention_output)
         #TODO(yhq): add hidden_states output before the "eigenValue shift" algorithm
-        layer_output,old_layer_output = self.output(intermediate_output, attention_output,i_layer)
-        return layer_output,old_layer_output
+        layer_output = self.output(intermediate_output, attention_output,i_layer)
+        return layer_output
 
 
 class BertEncoder(nn.Module):
@@ -607,7 +608,7 @@ class BertEncoder(nn.Module):
                     encoder_attention_mask,
                 )
             else:
-                layer_outputs,old_layer_outputs = layer_module(
+                layer_outputs,alpha = layer_module(
                     hidden_states,
                     attention_mask,
                     layer_head_mask,
@@ -618,7 +619,7 @@ class BertEncoder(nn.Module):
                     i,
                 )
             hidden_states = layer_outputs[0]#single layer output
-            old_hidden_states = old_layer_outputs[0]
+            # old_hidden_states = old_layer_outputs[0]
             #TODO(yhq): apply_exrank
             # if self.config.apply_exrank == "add_last":
             #TODO(yhq0512):
@@ -635,7 +636,7 @@ class BertEncoder(nn.Module):
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
-            all_old_hidden_states = all_old_hidden_states + (old_hidden_states,)
+            # all_old_hidden_states = all_old_hidden_states + (old_hidden_states,)
 
         if not return_dict:
             return tuple(
@@ -644,7 +645,7 @@ class BertEncoder(nn.Module):
                     hidden_states,
                     next_decoder_cache,
                     all_hidden_states,
-                    all_old_hidden_states,#add 
+                    alpha,#add 
                     all_self_attentions,
                     all_cross_attentions,
                 ]
@@ -659,7 +660,7 @@ class BertEncoder(nn.Module):
             last_hidden_state=hidden_states,#[bs,sq_len,dim] or [bs,sq_len,dim]
             past_key_values=next_decoder_cache,
             hidden_states=all_hidden_states,
-            old_hidden_states = all_old_hidden_states,#tuple,len=13
+            alpha = alpha,#tuple,len=13
             attentions=all_self_attentions,
             cross_attentions=all_cross_attentions,
         )
@@ -1060,7 +1061,7 @@ class BertModel(BertPreTrainedModel):
             pooler_output=pooled_output,
             past_key_values=encoder_outputs.past_key_values,
             hidden_states=encoder_outputs.hidden_states,
-            old_hidden_states=encoder_outputs.old_hidden_states,
+            alpha=encoder_outputs.alpha,
             attentions=encoder_outputs.attentions,
             cross_attentions=encoder_outputs.cross_attentions,
         )
@@ -1407,6 +1408,7 @@ class BertForMaskedLM(BertPreTrainedModel):
             logits=prediction_scores,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha
         )
 
     def prepare_inputs_for_generation(self, input_ids, attention_mask=None, **model_kwargs):
@@ -1519,6 +1521,7 @@ class BertForNextSentencePrediction(BertPreTrainedModel):
             logits=seq_relationship_scores,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -1604,6 +1607,7 @@ class BertForSequenceClassification(BertPreTrainedModel):#sentence-level, use th
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -1695,6 +1699,7 @@ class BertForMultipleChoice(BertPreTrainedModel):
             logits=reshaped_logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -1796,7 +1801,7 @@ class BertForTokenClassification(BertPreTrainedModel):
             loss=loss,
             logits=logits,
             hidden_states=outputs.hidden_states,
-            old_hidden_states=outputs.old_hidden_states,
+            alpha=outputs.alpha,
             attentions=outputs.attentions,
         )
 
@@ -1902,4 +1907,5 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             end_logits=end_logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )

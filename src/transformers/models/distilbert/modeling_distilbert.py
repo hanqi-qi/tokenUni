@@ -88,7 +88,7 @@ class ExRank_gx(nn.Module):
     def forward(self,input_seq):
         output = self.dropout(input_seq)
         output = self.LayerNorm(output)        
-        return output[0]
+        return output[0],output[-1]
 
 class Embeddings(nn.Module):
     def __init__(self, config):
@@ -278,15 +278,15 @@ class TransformerBlock(nn.Module):
         ffn_output = self.ffn(sa_output,i_layer)  # (bs, seq_length, dim)
         #TODO(yhq0512):replace origin ln with ours
         if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):
-            ffn_output = self.exrank_layer(ffn_output+sa_output)
+            ffn_output,alpha = self.exrank_layer(ffn_output+sa_output)
         elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_every4" and i_layer%4==0):
-            ffn_output = self.exrank_layer(ffn_output+sa_output)
+            ffn_output,alpha = self.exrank_layer(ffn_output+sa_output)
             ffn_output = self.output_layer_norm(ffn_output + sa_output)
         elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
             ffn_output = self.output_layer_norm(ffn_output + sa_output)
-            ffn_output = self.exrank_layer(ffn_output + sa_output)
+            ffn_output,alpha = self.exrank_layer(ffn_output + sa_output)
         elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
-            ffn_output = self.exrank_layer(ffn_output + sa_output)
+            ffn_output,alpha = self.exrank_layer(ffn_output + sa_output)
             ffn_output = self.output_layer_norm(ffn_output+ sa_output)
             
         else:
@@ -295,7 +295,10 @@ class TransformerBlock(nn.Module):
         output = (ffn_output,)
         if output_attentions:
             output = (sa_weights,) + output
-        return output
+        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "sof_expand":
+            return (output,alpha)
+        else:
+            return (output,)
 
 
 class Transformer(nn.Module):
@@ -337,14 +340,15 @@ class Transformer(nn.Module):
             layer_outputs = layer_module(
                 x=hidden_state, attn_mask=attn_mask, head_mask=head_mask[i], output_attentions=output_attentions,i_layer=i
             )
-            hidden_state = layer_outputs[-1]
+            #TODO(0706)
+            hidden_state = layer_outputs[0][-1]
 
             if output_attentions:
-                assert len(layer_outputs) == 2
-                attentions = layer_outputs[0]
+                assert len(layer_outputs[0]) == 2
+                attentions = layer_outputs[0][0]
                 all_attentions = all_attentions + (attentions,)
             else:
-                assert len(layer_outputs) == 1
+                assert len(layer_outputs[0]) == 1
 
         # Add last layer
         if output_hidden_states:
@@ -353,7 +357,7 @@ class Transformer(nn.Module):
         if not return_dict:
             return tuple(v for v in [hidden_state, all_hidden_states, all_attentions] if v is not None)
         return BaseModelOutput(
-            last_hidden_state=hidden_state, hidden_states=all_hidden_states, attentions=all_attentions
+            last_hidden_state=hidden_state, hidden_states=all_hidden_states, attentions=all_attentions,alpha=layer_outputs[-1]
         )
 
 
@@ -596,6 +600,7 @@ class DistilBertForMaskedLM(DistilBertPreTrainedModel):
             logits=prediction_logits,
             hidden_states=dlbrt_output.hidden_states,
             attentions=dlbrt_output.attentions,
+            alpha=dlbrt_output.alpha,
         )
 
 
@@ -678,6 +683,7 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
             logits=logits,
             hidden_states=distilbert_output.hidden_states,
             attentions=distilbert_output.attentions,
+            alpha=distilbert_output.alpha,
         )
 
 
@@ -774,6 +780,7 @@ class DistilBertForQuestionAnswering(DistilBertPreTrainedModel):
             end_logits=end_logits,
             hidden_states=distilbert_output.hidden_states,
             attentions=distilbert_output.attentions,
+            alpha=distilbert_output.alpha,
         )
 
 
@@ -858,6 +865,7 @@ class DistilBertForTokenClassification(DistilBertPreTrainedModel):
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -966,4 +974,5 @@ class DistilBertForMultipleChoice(DistilBertPreTrainedModel):
             logits=reshaped_logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )

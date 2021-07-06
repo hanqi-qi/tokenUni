@@ -1,7 +1,7 @@
 import os
 
 for model in ["albert-base-v1","roberta-base","bert-base-uncased","distilbert-base-uncased"]:
-    for task in ["_wnli","_rte","_mrpc","_cola"]: #"rte" "wnli"
+    for task in ["_rte","_cola","_mrpc","_sst2","_qnli"]: #"rte" "wnli"
         for lnv in ["_baseline","_soft_transform"]:
             for apply_exrank in ["_add_last_afterln","_add_last_beforeln","_None"]:
                 cwd = "/home/hanqiyan/repGeo/transformers/tokenUni/examples/pytorch/text-classification/outlog"

@@ -79,7 +79,7 @@ class ExRank_gx(nn.Module):
     def forward(self,input_seq):
         output = self.dropout(input_seq)
         output = self.LayerNorm(output)    
-        return output[0]
+        return output[0],output[1]
 
 def load_tf_weights_in_albert(model, config, tf_checkpoint_path):
     """Load tf checkpoints in a pytorch model."""
@@ -484,11 +484,11 @@ class AlbertTransformer(nn.Module):
             hidden_states = layer_group_output[0]
 
             if self.config.apply_exrank == "add_last_afterln" and i == self.config.num_hidden_layers-1:
-                hidden_states = self.exrank_layer(hidden_states+layer_input)
+                hidden_states,alpha = self.exrank_layer(hidden_states+layer_input)
                 hidden_states = self.full_layer_layer_norm(hidden_states+layer_input)
             if self.config.apply_exrank == "add_last_beforeln" and i == self.config.num_hidden_layers-1:
                 hidden_states = self.full_layer_layer_norm(hidden_states+layer_input)
-                hidden_states = self.exrank_layer(hidden_states+layer_input)     
+                hidden_states,alpha = self.exrank_layer(hidden_states+layer_input)     
 
             if output_attentions:
                 all_attentions = all_attentions + layer_group_output[-1]
@@ -499,7 +499,10 @@ class AlbertTransformer(nn.Module):
         if not return_dict:
             return tuple(v for v in [hidden_states, all_hidden_states, all_attentions] if v is not None)
         return BaseModelOutput(
-            last_hidden_state=hidden_states, hidden_states=all_hidden_states, attentions=all_attentions
+            last_hidden_state=hidden_states, 
+            hidden_states=all_hidden_states, 
+            attentions=all_attentions,
+            alpha = alpha
         )
 
 
@@ -562,6 +565,7 @@ class AlbertForPreTrainingOutput(ModelOutput):
     sop_logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 ALBERT_START_DOCSTRING = r"""
@@ -739,6 +743,7 @@ class AlbertModel(AlbertPreTrainedModel):
         )
 
         sequence_output = encoder_outputs[0]
+        # alpha = encoder_outputs[-1] #decay_alpha
 
         pooled_output = self.pooler_activation(self.pooler(sequence_output[:, 0])) if self.pooler is not None else None
 
@@ -750,6 +755,7 @@ class AlbertModel(AlbertPreTrainedModel):
             pooler_output=pooled_output,
             hidden_states=encoder_outputs.hidden_states,
             attentions=encoder_outputs.attentions,
+            alpha = encoder_outputs.alpha
         )
 
 
@@ -858,6 +864,7 @@ class AlbertForPreTraining(AlbertPreTrainedModel):
             sop_logits=sop_scores,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -980,6 +987,7 @@ class AlbertForMaskedLM(AlbertPreTrainedModel):
             logits=prediction_scores,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha
         )
 
 
@@ -1065,6 +1073,7 @@ class AlbertForSequenceClassification(AlbertPreTrainedModel):
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -1154,6 +1163,7 @@ class AlbertForTokenClassification(AlbertPreTrainedModel):
             logits=logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha,
         )
 
 
@@ -1256,6 +1266,7 @@ class AlbertForQuestionAnswering(AlbertPreTrainedModel):
             end_logits=end_logits,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            alpha=outputs.alpha
         )
 
 

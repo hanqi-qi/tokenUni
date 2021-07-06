@@ -105,7 +105,7 @@
                 "--model_name_or_path",
                 "bert-base-uncased",
                 "--task_name",
-                "stsb",
+                "mrpc",
                 "--learning_rate",
                 "2e-5",
                 "--num_train_epochs",
@@ -115,7 +115,7 @@
                 "--apply_exrank",
                 "add_last_afterln",
                 "--lnv",
-                "origin",
+                "soft_expand",
                 "--spectral_norm",
                 "True",
                 "--exrank_nonlinear",
@@ -124,10 +124,6 @@
                 "True",
                 "--max_length",
                 "128",
-                "--input_dir",
-                "/home/hanqiyan/transformers/examples/pytorch/text-classification/sts_dataset/datasets/stsbenchmark/",
-                "--sts_task",
-                "sts12",
             ]
         },
         {

@@ -274,7 +274,7 @@ def parse_args():
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=5e-5,
+        default=2e-5,
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay to use.")
@@ -302,10 +302,10 @@ def parse_args():
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
     parser.add_argument(
-        "--mask_hidden_dim",
-        type=int,
-        default = 300,
-        help="the hidden dimension of the eigenvalue mask",
+        "--decay_alpha",
+        type=float,
+        default = -0.2,
+        help="initial alpha value for soft_decay",
     )
     parser.add_argument(
         "--ifmask",
@@ -315,6 +315,7 @@ def parse_args():
     )
     parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
+    parser.add_argument("--alpha_lr", type=float, default=2e-3, help="learning rate the soft_decay function")
     args = parser.parse_args()
 
     # Sanity checks
@@ -414,39 +415,6 @@ def main():
     # download model & vocab.
     config = AutoConfig.from_pretrained(args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
 
-    #TODO(yhq): add customized arguments and use the default ones in Config file.
-    # id2label_dict= {
-    #     "0": "LABEL_0",
-    #     "1": "LABEL_1",
-    #     "2": "LABEL_2",
-    #     "3": "LABEL_3",
-    #     "4": "LABEL_4",
-    #     "5": "LABEL_5",
-    #     "6": "LABEL_6",
-    #     "7": "LABEL_7",
-    #     "8": "LABEL_8",
-    #     "9": "LABEL_9",
-    #     "10": "LABEL_10",
-    #     "11": "LABEL_11",
-    #     "12": "LABEL_12",
-    #     "13": "LABEL_13"
-    # }
-    # label2id_dict= {
-    #     "LABEL_0": 0,
-    #     "LABEL_1": 1,
-    #     "LABEL_2": 2,
-    #     "LABEL_3": 3,
-    #     "LABEL_4": 4,
-    #     "LABEL_5": 5,
-    #     "LABEL_6": 6,
-    #     "LABEL_7": 7,
-    #     "LABEL_8": 8,
-    #     "LABEL_9": 9,
-    #     "LABEL_10": 10, 
-    #     "LABEL_11": 11, 
-    #     "LABEL_12": 12, 
-    #     "LABEL_13": 13
-    # }
     if args.model_name_or_path=="albert-base-v1":
         config = AlbertConfig(
             lnv = args.lnv,
@@ -460,7 +428,7 @@ def main():
             intermediate_size=3072,#add for base model
             batch_size_yhq  = args.per_device_train_batch_size,
             ifmask = args.ifmask,
-            mask_hidden_dim = args.mask_hidden_dim,
+            decay_alpha = args.decay_alpha,
             output_hidden_states = True,
             # id2label = id2label_dict,
             # label2id = label2id_dict,
@@ -476,7 +444,7 @@ def main():
             return_dict = True,
             batch_size_yhq  = args.per_device_train_batch_size,
             ifmask = args.ifmask,
-            mask_hidden_dim = args.mask_hidden_dim,
+            decay_alpha = args.decay_alpha,
             output_hidden_states = True,
             # id2label=id2label_dict,
             num_labels = num_labels,
@@ -493,7 +461,7 @@ def main():
             return_dict = True,
             batch_size_yhq  = args.per_device_train_batch_size,
             ifmask = args.ifmask,
-            mask_hidden_dim = args.mask_hidden_dim,
+            decay_alpha = args.decay_alpha,
             output_hidden_states = True,
             # id2label=id2label_dict,
             # label2id=label2id_dict,
@@ -514,7 +482,7 @@ def main():
             batch_size_yhq  = args.per_device_train_batch_size,
             ifmask = args.ifmask,
             num_labels = num_labels,
-            mask_hidden_dim = args.mask_hidden_dim,
+            decay_alpha = args.decay_alpha,
             output_hidden_states = True,
             # id2label=id2label_dict,
             # label2id=label2id_dict,
@@ -625,31 +593,30 @@ def main():
     # Split weights in two groups, one with weight decay and the other not.
     no_decay = ["bias", "LayerNorm.weight"]
     no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias"]
+    alpha_decay = ["alpha"]
+    # optimizer_grouped_parameters = [
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+    #         "weight_decay": args.weight_decay,
+    #     },
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+    #         "weight_decay": 0.0,
+    #     },
+    # ]
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-            "weight_decay": args.weight_decay,
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in alpha_decay)],
+            "lr": args.learning_rate,
         },
         {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-            "weight_decay": 0.0,
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_decay)],
+            "lr": args.alpha_lr,
         },
     ]
-    # optimizer_grouped_parameters = [
-    # {
-    #     "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_fix_weight)],
-    #     "lr":2e-5,
-    #     # "params": [p for n, p in model.named_parameters() if not n=="bert.embeddings.word_embeddings.weight" ],
-    #     # "lr":0,
-    # },
-    # {
-    #     "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_fix_weight)],
-    #     "lr":0,
-    #     # "params": [p for n, p in model.named_parameters() if n=="bert.embeddings.word_embeddings.weight"],
-    #     # "lr":0,
-    # },
-    # ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr = args.learning_rate)
+
+    optimizer = AdamW(optimizer_grouped_parameters)
+    # optimizer = AdamW(optimizer_grouped_parameters, lr = args.learning_rate)
     # Prepare everything with our `accelerator`.
     model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader
@@ -723,8 +690,10 @@ def main():
             #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
             #TODO(yhq): whitebert output
             if step%args.vis_step ==0:
+                if args.lnv=="soft_expand":
+                    print(outputs.alpha.item())
                 hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-                vis_tools.save_matrix(hidden_states_layers,step,args,mode="train",timestamp="new")
+                vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
 

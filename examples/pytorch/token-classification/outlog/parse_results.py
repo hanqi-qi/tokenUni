@@ -7,7 +7,7 @@ for model in ["albert-base-v1","roberta-base","bert-base-uncased","distilbert-ba
     for apply_exrank in ["-add_last_afterln","-add_last_beforeln","_None"]:
         cwd = "/home/hanqiyan/repGeo/transformers/tokenUni/examples/pytorch/token-classification/outlog"
         for lnv in ["-soft_transform","baseline"]:
-            path = os.path.join(cwd,"0702"+model+apply_exrank+lnv+".out")
+            path = os.path.join(cwd,"0703"+model+apply_exrank+lnv+"_alphaN01.out")
             if os.path.exists(path):
                 # print(path)
                 input_content = open(path).readlines()
