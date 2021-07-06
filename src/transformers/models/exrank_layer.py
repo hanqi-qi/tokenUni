@@ -73,12 +73,12 @@ class LayerNormImpl(nn.Module):
         #TODO(yhq0513): dim=768, hidden_dim=4*dim
         #TODO(byj):
         self.hidden = 768
-        self.mask_hidden_dim = args.mask_hidden_dim
+        self.decay_alpha = args.decay_alpha
         self.ifmask = args.ifmask
         self.llayer = llayer
-        self.soft_exp = soft_exponential(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)
-        self.soft_yhq = soft_yhq(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)      
-        # self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,mask_hidden_dim=self.mask_hidden_dim,ifmask=self.ifmask)
+        self.soft_exp = soft_exponential(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
+        # self.soft_yhq = soft_yhq(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)      
+        # self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
         if args.spectral_norm == True:
             # print("use spec")
             self.raw_exrank = nn.Linear(self.hidden,self.hidden)
@@ -143,7 +143,7 @@ class LayerNormImpl(nn.Module):
             newS = torch.mean(s,dim=-1).unsqueeze(-1)*torch.ones(s.shape).cuda()
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            return (new_input,)
+            return (new_input,rescale_s_dia)
         elif self.norm_mode == 'linear':
             K = 1.1 
             u,s,v = torch.svd(input)
@@ -151,7 +151,7 @@ class LayerNormImpl(nn.Module):
             newS = maxS - (maxS-s)/K
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            return (new_input,)
+            return (new_input,rescale_s_dia)
         elif self.norm_mode == 'rescale':
             mean = input.mean(dim=-1, keepdim=True)
             std = input.std(dim=-1, keepdim=True)
@@ -182,6 +182,7 @@ class LayerNormImpl(nn.Module):
             newS = newS/rescale_number
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
+            # print(alpha.item())
             return (new_input,alpha)
         elif self.norm_mode == "soft_transform":
             u,s,v = torch.svd(input)
@@ -194,6 +195,7 @@ class LayerNormImpl(nn.Module):
             newS = newS/rescale_number
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
+            # print(alpha.item())
             return (new_input,alpha) 
         # elif self.norm_mode == "soft_expand_beta":
         #     u,s,v = torch.svd(input)

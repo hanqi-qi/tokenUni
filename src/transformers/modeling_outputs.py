@@ -44,6 +44,7 @@ class BaseModelOutput(ModelOutput):
     last_hidden_state: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -75,6 +76,7 @@ class BaseModelOutputWithPooling(ModelOutput):
     pooler_output: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -194,7 +196,7 @@ class BaseModelOutputWithPoolingAndCrossAttentions(ModelOutput):
     last_hidden_state: torch.FloatTensor = None
     pooler_output: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
-    old_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
     past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
     cross_attentions: Optional[Tuple[torch.FloatTensor]] = None
@@ -243,7 +245,7 @@ class BaseModelOutputWithPastAndCrossAttentions(ModelOutput):
     past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     #TODO(yhq0509): add 
-    old_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
     cross_attentions: Optional[Tuple[torch.FloatTensor]] = None
 
@@ -481,6 +483,8 @@ class MaskedLMOutput(ModelOutput):
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
+    
 
 
 @dataclass
@@ -571,6 +575,7 @@ class NextSentencePredictorOutput(ModelOutput):
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -600,6 +605,7 @@ class SequenceClassifierOutput(ModelOutput):
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -660,6 +666,7 @@ class Seq2SeqSequenceClassifierOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -691,6 +698,7 @@ class MultipleChoiceModelOutput(ModelOutput):
     logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -721,6 +729,7 @@ class TokenClassifierOutput(ModelOutput):
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     old_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -753,6 +762,7 @@ class QuestionAnsweringModelOutput(ModelOutput):
     end_logits: torch.FloatTensor = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None
 
 
 @dataclass
@@ -816,3 +826,4 @@ class Seq2SeqQuestionAnsweringModelOutput(ModelOutput):
     encoder_last_hidden_state: Optional[torch.FloatTensor] = None
     encoder_hidden_states: Optional[Tuple[torch.FloatTensor]] = None
     encoder_attentions: Optional[Tuple[torch.FloatTensor]] = None
+    alpha: Optional[torch.FloatTensor] = None

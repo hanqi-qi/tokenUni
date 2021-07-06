@@ -20,7 +20,7 @@ class soft_exponential(nn.Module):
         >>> x = torch.randn(256)
         >>> x = a1(x)
     '''
-    def __init__(self, in_features, alpha = None, hidden_dim=768, mask_hidden_dim=300,ifmask=False):
+    def __init__(self, in_features, alpha = None, hidden_dim=768, decay_alpha=-0.2,ifmask=False):
         '''
         Initialization.
         INPUT:
@@ -35,7 +35,7 @@ class soft_exponential(nn.Module):
         # initialize alpha
         #TODO(yhq)
         if alpha == None:
-            self.alpha = nn.Parameter(torch.tensor(-0.2)) # create a tensor out of alpha
+            self.alpha = nn.Parameter(torch.tensor(decay_alpha)) # create a tensor out of alpha
         else:
             self.alpha = nn.Parameter(torch.tensor(alpha)) # create a tensor out of alpha
         # self.alpha = nn.Parameter(torch.tensor(0.0))
@@ -44,20 +44,19 @@ class soft_exponential(nn.Module):
         #TODO(yhq:0507) add parameters for mask function
         self.activations = {'tanh': torch.tanh, 'sigmoid': torch.sigmoid, 'relu': torch.relu, 'leaky_relu': F.leaky_relu}
         self.activation = self.activations["relu"]
-        self.linear_layer = nn.Linear(hidden_dim, mask_hidden_dim)
-        self.hidden2p = nn.Linear(mask_hidden_dim, 2)
+
     
-    def mask(self, x,s,fs):
-        '''use mask to decide which eigenvalue should be kept unchanged as s or changed to fs!
-        x: the semantic representation used for mask calculation;
-        s: original eigenvalue distribution;
-        fs: new eigenvalue distribution after applying soft_expand function'''
-        temps = self.activation(self.linear_layer(x))
-        p = self.hidden2p(temps)  # seqlen, bsz, dim
-        mask = F.gumbel_softmax(p,hard=True,dim=2)
-        newS = mask[:,:,0]*s+mask[:,:,1]*fs
-		# x_prime = r * x
-        return newS
+    # def mask(self, x,s,fs):
+    #     '''use mask to decide which eigenvalue should be kept unchanged as s or changed to fs!
+    #     x: the semantic representation used for mask calculation;
+    #     s: original eigenvalue distribution;
+    #     fs: new eigenvalue distribution after applying soft_expand function'''
+    #     temps = self.activation(self.linear_layer(x))
+    #     p = self.hidden2p(temps)  # seqlen, bsz, dim
+    #     mask = F.gumbel_softmax(p,hard=True,dim=2)
+    #     newS = mask[:,:,0]*s+mask[:,:,1]*fs
+	# 	# x_prime = r * x
+    #     return newS
 
     def forward(self, input,s):
         '''
