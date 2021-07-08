@@ -1,7 +1,8 @@
 export TASK_NAME=$3
 export model_name=$4
 
-CUDA_VISIBLE_DEVICES="4" python run_glue_no_trainer.py \
+CUDA_VISIBLE_DEVICES="3" python run_glue_no_trainer.py \
+>>>>>>> 29efca0c426830ab06181f05c4ce94667ca24f83
   --model_name_or_path $model_name \
   --task_name $TASK_NAME \
   --dataset_name $TASK_NAME \

@@ -14,3 +14,16 @@ do
         done
     done
 done
+
+# for model_name in "bert-base-uncased"
+# do
+#     for TASK_NAME in "sst2" "qnli"#"rte" "cola" "mrpc" 
+#     do 
+#         bash run_glue_no_trainer.sh "None" "origin" $TASK_NAME $model_name >"./outlog/0705${model_name}_${TASK_NAME}_None_baseline.out" 2>&1
+#     done
+# done
+
+# for model_name in "albert-base-v1" "bert-base-uncased" "distilbert-base-uncased" "roberta-base"
+# do
+#     bash run_ner_no_trainer.sh "None" "origin" $model_name >"./outlog/0703${model_name}_Nonebaseline_alphaN01.out" 2>&1
+# done

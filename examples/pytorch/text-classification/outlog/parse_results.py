@@ -16,4 +16,3 @@ for model in ["roberta-base"]:
                                     result = line.split("epoch 2:")[-1]
                                     print(result)
                                     break
-

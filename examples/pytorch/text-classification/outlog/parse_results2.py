@@ -11,6 +11,4 @@ for model in ["bert-base-uncased","distilbert-base-uncased","albert-base-v1","ro
                     input_content = open(path).readlines()
                     for line in input_content:
                         if "epoch 2" in line:
-                            result = line.split("epoch 2:")[-1]
-                            print(result)
-                            break
+                            result = line.split("epoch 2:")
