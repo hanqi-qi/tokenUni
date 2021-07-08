@@ -19,7 +19,7 @@ import math
 import textwrap
 import os
 import random
-from adjustText import adjust_text
+#from adjustText import adjust_text
 import torch
 import datetime
 import numpy as np
@@ -33,7 +33,7 @@ from torch.utils.data.dataloader import DataLoader
 from tqdm.auto import tqdm
 import sys
 sys.path.pop()
-sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
+sys.path.insert(0,"/home/hanq1warwick/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
 from transformers import (
@@ -662,11 +662,11 @@ def main():
     loss_train,loss_test = {},{}
     loss_x = 0
 
-    picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/token_uni/{}/{}".format(args.task_name,args.model_name_or_path,args.lnv)
-    if os.path.isdir(picdir):
-        shutil.rmtree(picdir)
-    if not os.path.isdir(picdir):
-        os.makedirs(picdir)
+    #picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/token_uni/{}/{}".format(args.task_name,args.model_name_or_path,args.lnv)
+    #if os.path.isdir(picdir):
+        #shutil.rmtree(picdir)
+    #if not os.path.isdir(picdir):
+        #os.makedirs(picdir)
     ifpca = True
     for epoch in range(args.num_train_epochs):
         start_time = datetime.datetime.now()

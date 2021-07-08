@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2019-present, the HuggingFace Inc. team, The Google AI Language Team and Facebook, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -295,7 +294,7 @@ class TransformerBlock(nn.Module):
         output = (ffn_output,)
         if output_attentions:
             output = (sa_weights,) + output
-        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "sof_expand":
+        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
             return (output,alpha)
         else:
             return (output,)

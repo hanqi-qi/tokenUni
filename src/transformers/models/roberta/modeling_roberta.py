@@ -468,7 +468,7 @@ class RobertaLayer(nn.Module):
         if self.is_decoder:
             outputs = outputs + (present_key_value,)
 
-        return outputs,layer_output[0]
+        return outputs,layer_output[-1]
 
     def feed_forward_chunk(self, attention_output,i_layer):
         intermediate_output = self.intermediate(attention_output)

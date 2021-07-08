@@ -1,9 +1,9 @@
 export model_name=$3
 
-CUDA_VISIBLE_DEVICES="1" python run_ner_no_trainer.py \
+CUDA_VISIBLE_DEVICES="5" python run_ner_no_trainer.py \
   --model_name_or_path $3 \
   --dataset_name conll2003 \
-  --output_dir /mnt/Data3/hanqiyan/rank_transformers/tmp/test-ner/$3/$2 \
+  --output_dir /home/hanq1warwick/Data/rank_nips/tmp/test-ner/$3/$2 \
   --pad_to_max_length \
   --task_name ner \
   --return_entity_level_metrics \
@@ -14,3 +14,5 @@ CUDA_VISIBLE_DEVICES="1" python run_ner_no_trainer.py \
   --vis_step 500 \
   --ifmask False \
   --seed 2021 \
+  --decay_alpha $4 \
+  --alpha_lr $5 \

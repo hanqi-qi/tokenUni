@@ -2,7 +2,7 @@ for lnv in "soft_expand"
 do
     for apply_exrank in "add_last_afterln" "add_last_beforeln"
     do
-        for model_name in "bert-base-uncased"
+        for model_name in "distilbert-base-uncased" "albert-base-v1" "roberta-base"
         do
             for TASK_NAME in "rte" "cola" "mrpc" "sst2" "qnli" 
             do
