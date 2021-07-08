@@ -40,6 +40,7 @@ from tqdm.utils import _text_width
 
 import sys
 sys.path.pop()
+# sys.path.insert(0,"/home/hanq1warwick/tokenUni/src/")
 sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
@@ -327,7 +328,13 @@ def parse_args():
         default = False,
         help="if mask the eigenvalue",
     )
-    
+    parser.add_argument(
+        "--decay_alpha",
+        type=float,
+        default = -0.2,
+        help="initial alpha value for soft_decay",
+    )
+    parser.add_argument("--alpha_lr", type=float, default=2e-3, help="learning rate the soft_decay function")
     args = parser.parse_args()
 
     # Sanity checks
@@ -501,11 +508,13 @@ def main():
             ifmask = args.ifmask,
             mask_hidden_dim = args.mask_hidden_dim,
             output_hidden_states = True,
+            decay_alpha = args.decay_alpha,
             id2label = id2label_dict,
             label2id = label2id_dict,
         )
     elif args.model_name_or_path=="distilbert-base-uncased":
             config = DistilBertConfig(
+            decay_alpha = args.decay_alpha,
             lnv = args.lnv,
             max_seq_length = args.max_length,
             spectral_norm = args.spectral_norm,
@@ -523,6 +532,7 @@ def main():
         #initiate the config with super class bert.
         config = RobertaConfig(
             lnv = args.lnv,
+            decay_alpha = args.decay_alpha,
             max_seq_length = args.max_length,
             spectral_norm = args.spectral_norm,
             exrank_nonlinear = args.exrank_nonlinear,
@@ -543,6 +553,7 @@ def main():
     elif args.model_name_or_path == "bert-base-uncased":
         config = BertConfig(
             lnv = args.lnv,
+            decay_alpha = args.decay_alpha,
             max_seq_length = args.max_length,
             spectral_norm = args.spectral_norm,
             exrank_nonlinear = args.exrank_nonlinear,
@@ -645,18 +656,30 @@ def main():
     # no_decay = ["bias", "LayerNorm.weight"] #subtring in the parameter's name
     #TODO(yhq): larger learning rate for the alpha in soft-expand function.
     no_decay = ["bias", "LayerNorm.weight","exrank_layer"]
+    alpha_decay = ["alpha"]
+    # optimizer_grouped_parameters = [
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+    #         "weight_decay": args.weight_decay,
+    #     },
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+    #         "weight_decay": 0.0,
+    #     },
+    # ]
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-            "weight_decay": args.weight_decay,
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in alpha_decay)],
+            "lr": args.learning_rate,
         },
         {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-            "weight_decay": 0.0,
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_decay)],
+            "lr": args.alpha_lr,
         },
     ]
 
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
+    # optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate)
+    optimizer = AdamW(optimizer_grouped_parameters)
 
     # Use the device given by the `accelerator` object.
     device = accelerator.device
@@ -774,11 +797,12 @@ def main():
             # vis_tools.save_matrix(outputs.hidden_states,epoch,args,mode='train',timestamps='new')
                 #TODO(yhq):save the intermediate hidden_states every vis_epoch
                 if step%args.vis_step ==0:
+                    print(outputs.alpha.item())
                     hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)
                 #     #TODO(yhq0509): see the soft_expand function effects. draw the hist, and statistics after NORM
                     # old_hidden_states = torch.stack(outputs.old_hidden_states).permute(1,0,2,3)
                     # vis_tools.save_matrix(old_hidden_states,step,args,mode='train',timestamp='old2')
-                    vis_tools.save_matrix(hidden_states_layers,step,args,mode="train",timestamp='new')
+                    vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp='new')
             end_time = datetime.datetime.now()
             time_list.append((end_time-start_time).seconds)
             model.eval()
