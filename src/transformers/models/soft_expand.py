@@ -66,3 +66,27 @@ class soft_exponential(nn.Module):
         eps = 1e-7
         fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
         return fs,self.alpha
+        # if (self.alpha == 0.0):
+        #     fs = s
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha
+
+        # if (self.alpha < 0.0):
+        #     eps = 1e-7
+        #     #fix the alpha or trainable
+        #     # fs = - torch.log(1 - self.alpha * (s + self.alpha)+eps) / self.alpha
+        #     alpha = -0.2
+        #     fs = - torch.log(1 - alpha * (s + alpha)+eps) / alpha
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha
+
+        # if (self.alpha > 0.0):
+        #     fs = (torch.exp(self.alpha * s) - 1)/ self.alpha + self.alpha
+        #     if self.ifmask:
+        #         return self.mask(input,s,fs),self.alpha
+        #     else:
+        #         return fs,self.alpha

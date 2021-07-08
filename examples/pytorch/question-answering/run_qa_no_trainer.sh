@@ -1,5 +1,5 @@
 export model_name=$3
-CUDA_VISIBLE_DEVICES="3" python run_qa_no_trainer.py \
+CUDA_VISIBLE_DEVICES="0" python run_qa_no_trainer.py \
   --model_name_or_path $model_name \
   --dataset_name squad \
   --per_device_train_batch_size 12 \
@@ -14,6 +14,6 @@ CUDA_VISIBLE_DEVICES="3" python run_qa_no_trainer.py \
   --ifmask False \
   --exrank_nonlinear relu \
   --vis_step 500 \
-  --output_dir /mnt/Data3/hanqiyan/rank_transformers/tmp/debug_squad/$model_name/$2
+  --output_dir /home/hanq1warwick/Data/rank_nips/tmp/debug_squad/$model_name/$2 \
   --seed 2021 \
   # --output_dir /home/hanq1warwick/Data/rank_nips/tmp/debug_squad/$model_name/$2
