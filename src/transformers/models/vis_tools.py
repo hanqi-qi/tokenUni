@@ -69,8 +69,8 @@ def save_matrix(input_tensor,epoch,config,mode="train",timestamp='new'):
         epoch = str(epoch)
     elif mode == 'eval':
         epoch = "EVAL:"+str(epoch)
-    parent_dir = "//home/hanq1warwick/Data/rank_nips/eigenout/{}/{}/weight/{}".format(config.dataset_name,config.model_name_or_path,config.lnv)
-    matrix_path =  "Epoch{}_{}.npy".format(epoch,config.apply_exrank)
+    parent_dir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}".format(config.dataset_name,config.model_name_or_path,config.lnv)
+    matrix_path =  "fixweight_Epoch{}_{}.npy".format(epoch,config.apply_exrank)
     matrix_name = os.path.join(parent_dir,matrix_path)
     if not os.path.isdir(parent_dir):
         os.makedirs(parent_dir)

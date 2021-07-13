@@ -1,7 +1,7 @@
 import os
 
 for model in ["bert-base-uncased","distilbert-base-uncased"]:
-    for task in ["_qnli"]: #"rte" "wnli","_cola","_mrpc","_sst2","_qnli"
+    for task in ["_mrpc"]: #"rte" "wnli","_cola","_mrpc","_sst2","_qnli"
         for lnv in ["_soft_expand"]:
             for apply_exrank in ["_add_last_afterln","_add_last_beforeln","_None"]:
                 for decay_alpha in ["-0.2","-0.5","-0.8"]:

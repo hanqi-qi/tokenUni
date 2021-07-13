@@ -25,7 +25,9 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset, load_metric
-
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from transformers import (
     AutoConfig,
@@ -172,6 +174,16 @@ class ModelArguments:
             "with private models)."
         },
     )
+    decay_alpha: float = field(
+        default=-0.2,
+    )
+    lnv: str = field(
+        default= "soft_expand",
+    )
+    apply_exrank: str = field(
+        default = "add_last_beforeln",
+    )
+
 
 
 def main():

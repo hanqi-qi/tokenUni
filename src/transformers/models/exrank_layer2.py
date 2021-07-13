@@ -123,104 +123,21 @@ class LayerNormImpl(nn.Module):
             # nn.init.zeros_()
 
     def forward(self, input):
-        if self.norm_mode == 'exrank_gx' or self.llayer: #apply regularization to g(x) weight
-            mean = input.mean(dim=-1, keepdim=True)
-            std = input.std(dim=-1, keepdim=True)
-            input_norm = (input-mean)/(std+self.eps)
-            output = input*self.exrank_nonlinear(self.exrank_linear(input_norm))
-            gx_weight = self.exrank_linear.weight
-            return (output,gx_weight)
-        elif self.norm_mode == 'origin':
-            mean = input.mean(dim=-1, keepdim=True)
-            std = input.std(dim=-1, keepdim=True)
-            input_norm = (input-mean)/(std+self.eps)
-            output = self.weight*input_norm+self.bias
-            return (output,self.weight)
-        elif self.norm_mode == 'no_norm':
-            return (input,)
-        elif self.norm_mode == 'average':
-            u,s,v = torch.svd(input)
-            newS = torch.mean(s,dim=-1).unsqueeze(-1)*torch.ones(s.shape).cuda()
-            rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
-            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            return (new_input,rescale_s_dia)
-        elif self.norm_mode == 'linear':
-            K = 1.1 
-            u,s,v = torch.svd(input)
-            maxS = torch.max(s,dim=1).values.unsqueeze(-1) #[8,128]
-            newS = maxS - (maxS-s)/K
-            rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
-            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            return (new_input,rescale_s_dia)
-        elif self.norm_mode == 'rescale':
-            mean = input.mean(dim=-1, keepdim=True)
-            std = input.std(dim=-1, keepdim=True)
-            input_norm = (input-mean)/(std+self.eps)
-            output = self.rescale_weight*input_norm
-            return (output,self.rescale_weight)
-        #TODO(yhq:) add the "distribution shift" function:
-        elif self.norm_mode == "shift":
-            gamma = self.logbase #original
-            #step1: svd the input
-            u,s,v = torch.svd(input) #u[8,128,128] s[8,128] v[8,768,128]
-            maxS = torch.max(s,dim=1).values.unsqueeze(-1) #[8,128]
-            #TODO(yhq): 
-            # rescale_s = torch.log10(s/maxS+torch.ones_like(s))/torch.log10(gamma).cuda() #without rescaling
-            #TODO(yhq): 0506 GuiLin
-            rescale_s = torch.log10(gamma*s/maxS+torch.ones_like(s))/torch.log10(torch.ones_like(s)+gamma).cuda()
-            rescale_s_dia = torch.diag_embed(maxS*rescale_s,dim1=-2,dim2=-1)#[8,128,128]dia
-            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1)) #[8,128,128]
-            return (new_input,gamma)
-        elif self.norm_mode == "soft_expand":
-            u,s,v = torch.svd(input)
-            maxS = torch.max(s,dim=1).values.unsqueeze(-1)
-            newS,alpha = self.soft_exp(input,s)#[8,128]
-            #TODO(yhq0507): normalize the new_s to maxvalue=1
-            maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
-             #make the maxS unchanged
-            rescale_number = maxNewS/maxS
-            newS = newS/rescale_number
-            rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
-            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            # print(alpha.item())
-            return (new_input,alpha)
-        elif self.norm_mode == "soft_transform":
-            u,s,v = torch.svd(input)
-            maxS = torch.max(s,dim=1).values.unsqueeze(-1)
-            newS,alpha = self.soft_yhq(input,s)#[8,128]
-            #TODO(yhq0507): normalize the new_s to maxvalue=1
-            maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
-             #make the maxS unchanged
-            rescale_number = maxNewS/maxS
-            newS = newS/rescale_number
-            rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
-            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-            # print(alpha.item())
-            return (new_input,alpha) 
-        # elif self.norm_mode == "soft_expand_beta":
-        #     u,s,v = torch.svd(input)
-        #     maxS = torch.max(s,dim=1).values.unsqueeze(-1)
-        #     newS,alpha = self.soft_exp_beta(input,s)#
-        #     # if alpha.item()>-0.5 or alpha.item()<-0.5:
-        #         # print(alpha.item())
-        #     maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
-        #     rescale_number =  maxNewS/maxS #make the maxS unchanged
-        #     newS = newS/rescale_number
-        #     rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
-        #     new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
-        #     return (new_input,alpha)
-        else:
-            return (input,)
+        u,s,v = torch.svd(input)
+        maxS = torch.max(s,dim=1).values.unsqueeze(-1)
+        newS,alpha = self.soft_exp(input,s)#[8,128]
+        #TODO(yhq0507): normalize the new_s to maxvalue=1
+        maxNewS = torch.max(newS,dim=1).values.unsqueeze(-1)
+            #make the maxS unchanged
+        rescale_number = maxNewS/maxS
+        newS = newS/rescale_number
+        rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
+        new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
+        # print(alpha.item())
+        return (new_input,alpha)
+
+
 
 def NormFuncs(normalized_shape, eps=1e-5, elementwise_affine=True, export=False, args=None):
     if args is not None:
         return LayerNormImpl(args, normalized_shape, eps, elementwise_affine)
-    #     if args.lnv != 'origin':
-    #         return LayerNormImpl(args, normalized_shape, eps, elementwise_affine)
-    # if not export and torch.cuda.is_available():
-    #     try:
-    #         from apex.normalization import FusedLayerNorm
-    #         return FusedLayerNorm(normalized_shape, eps, elementwise_affine)
-    #     except ImportError:
-    #         pass
-    # return torch.nn.LayerNorm(normalized_shape, eps, elementwise_affine)

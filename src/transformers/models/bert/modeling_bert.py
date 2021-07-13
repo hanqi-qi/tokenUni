@@ -15,7 +15,7 @@
 # limitations under the License.
 """PyTorch BERT model. """
 
-from ..exrank_layer import NormFuncs
+from ..exrank_layer2 import NormFuncs
 import math
 import os
 import warnings
@@ -437,33 +437,48 @@ class BertOutput(nn.Module):
         self.exrank_layer = ExRank_gx(config)
         # print("Mode for applying EXRANK!!!")
         # print(self.config.apply_exrank)
-
     def forward(self, hidden_states, input_tensor,i_layer):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
-        # old_states = hidden_states
-        #TODO(yhq): replace the original layernorm before the output at each layer
-        #TODO(yhq0512):
-        if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
-            old_hidden_states = hidden_states+input_tensor
-            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
-        elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
-            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
-            hidden_states = self.LayerNorm(hidden_states + input_tensor)
-        elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
-            hidden_states = self.LayerNorm(hidden_states + input_tensor)
-            hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
-        elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
+
+        if i_layer == self.config.num_hidden_layers-1:
             hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         else:#0-10 layers
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
             # old_hidden_states = hidden_states
         #TODO(yhq:0615)
-        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
+        if i_layer == self.config.num_hidden_layers-1:
             return (hidden_states,alpha)
         else:
             return (hidden_states,)
+
+    # def forward(self, hidden_states, input_tensor,i_layer):
+    #     hidden_states = self.dense(hidden_states)
+    #     hidden_states = self.dropout(hidden_states)
+    #     # old_states = hidden_states
+    #     #TODO(yhq): replace the original layernorm before the output at each layer
+    #     #TODO(yhq0512):
+    #     if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
+    #         old_hidden_states = hidden_states+input_tensor
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
+    #     elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #     elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #         hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+    #     elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #     else:#0-10 layers
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #         # old_hidden_states = hidden_states
+    #     #TODO(yhq:0615)
+    #     if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
+    #         return (hidden_states,alpha)
+    #     else:
+    #         return (hidden_states,)
 
 
 class BertLayer(nn.Module):

@@ -568,6 +568,7 @@ def main():
 
     train_dataset = processed_datasets["train"]
     eval_dataset = processed_datasets["validation_matched" if args.task_name == "mnli" else "validation"]
+    predict_dataset = processed_datasets["validation_matched" if args.task_name == "mnli" else "test"]
 
     # Log a few random samples from the training set:
     for index in random.sample(range(len(train_dataset)), 3):
@@ -589,34 +590,35 @@ def main():
     )
     eval_dataloader = DataLoader(eval_dataset, collate_fn=data_collator, batch_size=args.per_device_eval_batch_size)
 
+
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
     no_decay = ["bias", "LayerNorm.weight"]
-    no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias"]
-    alpha_decay = ["alpha"]
-    # optimizer_grouped_parameters = [
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-    #         "weight_decay": args.weight_decay,
-    #     },
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-    #         "weight_decay": 0.0,
-    #     },
-    # ]
+    no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias","alpha"]
+    # alpha_decay = ["alpha"]
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in alpha_decay)],
-            "lr": args.learning_rate,
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "weight_decay": args.weight_decay,
         },
         {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_decay)],
-            "lr": args.alpha_lr,
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+            "weight_decay": 0.0,
         },
     ]
+    # optimizer_grouped_parameters = [
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in alpha_decay)],
+    #         "lr": args.learning_rate,
+    #     },
+    #     {
+    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_decay)],
+    #         "lr": args.alpha_lr,
+    #     },
+    # ]
 
-    optimizer = AdamW(optimizer_grouped_parameters)
-    # optimizer = AdamW(optimizer_grouped_parameters, lr = args.learning_rate)
+    # optimizer = AdamW(optimizer_grouped_parameters)
+    optimizer = AdamW(optimizer_grouped_parameters, lr = 2e-5)
     # Prepare everything with our `accelerator`.
     model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader
@@ -689,7 +691,7 @@ def main():
                 break
             #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
             #TODO(yhq): whitebert output
-            if step%args.vis_step ==0:
+            if step%10000 ==0:
                 if args.lnv=="soft_expand":
                     print(outputs.alpha.item())
                 hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
@@ -741,8 +743,27 @@ def main():
 
         eval_metric = metric.compute()
         logger.info(f"mnli-mm: {eval_metric}")
-        
 
+    predict_datasets = [predict_dataset]
+    for predict_dataset, task in zip(predict_datasets, tasks):
+            # Removing the `label` columns because it contains -1 and Trainer won't like that.
+        predict_dataset = predict_dataset.remove_columns("label")
+        predictions = trainer.predict(predict_dataset, metric_key_prefix="predict").predictions
+        predictions = np.squeeze(predictions) if is_regression else np.argmax(predictions, axis=1)
+
+        output_predict_file = os.path.join(args.output_dir, f"predict_results_{task}.txt")
+
+        with open(output_predict_file, "w") as writer:
+            logger.info(f"***** Predict results {task} *****")
+            writer.write("index\tprediction\n")
+            for index, item in enumerate(predictions):
+                if is_regression:
+                    writer.write(f"{index}\t{item:3.3f}\n")
+                else:
+                    item = label_list[item]
+                    writer.write(f"{index}\t{item}\n")
+        
+    
 
 if __name__ == "__main__":
     main()
