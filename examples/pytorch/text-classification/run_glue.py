@@ -28,6 +28,7 @@ from datasets import load_dataset, load_metric
 import sys
 sys.path.pop()
 sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
+sys.path.insert(0,"")
 import transformers
 from transformers import (
     AutoConfig,
@@ -173,15 +174,6 @@ class ModelArguments:
             "help": "Will use the token generated when running `transformers-cli login` (necessary to use this script "
             "with private models)."
         },
-    )
-    decay_alpha: float = field(
-        default=-0.2,
-    )
-    lnv: str = field(
-        default= "soft_expand",
-    )
-    apply_exrank: str = field(
-        default = "add_last_beforeln",
     )
 
 

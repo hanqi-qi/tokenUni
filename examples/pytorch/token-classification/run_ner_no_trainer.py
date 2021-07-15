@@ -20,7 +20,7 @@ without using a Trainer.
 from re import T
 import textwrap
 from sklearn.manifold import TSNE
-from adjustText import adjust_text
+#from adjustText import adjust_text
 import argparse
 import logging
 import math
@@ -40,8 +40,8 @@ from tqdm.utils import _text_width
 
 import sys
 sys.path.pop()
-# sys.path.insert(0,"/home/hanq1warwick/tokenUni/src/")
-sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
+sys.path.insert(0,"/home/hanq1warwick/tokenUni/src/")
+#sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
 import transformers
 from accelerate import Accelerator
 from transformers import(
@@ -765,11 +765,11 @@ def main():
     completed_steps = 0
     
     #!Train
-    picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/conll2003/token_uni/{}/{}".format(args.model_name_or_path,args.lnv)
-    if os.path.isdir(picdir):
-        shutil.rmtree(picdir)
-    if not os.path.isdir(picdir):
-        os.makedirs(picdir)
+    #picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/conll2003/token_uni/{}/{}".format(args.model_name_or_path,args.lnv)
+    #if os.path.isdir(picdir):
+        #shutil.rmtree(picdir)
+    #if not os.path.isdir(picdir):
+        #os.makedirs(picdir)
     time_list = []
     loss_train,loss_test = {},{}
     loss_x = 0
@@ -836,3 +836,4 @@ def main():
     
 if __name__ == "__main__":
     main()
+

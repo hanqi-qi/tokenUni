@@ -550,7 +550,7 @@ class BertLayer(nn.Module):
         #TODO(yhq): modify this function to achieve settings for various layers
         layer_output = apply_chunking_to_forward(
             self.feed_forward_chunk, i_layer, self.chunk_size_feed_forward, self.seq_len_dim, attention_output)
-        outputs = (layer_output[0],) + outputs #tuple with one element, the single layer output
+        outputs = (layer_output,) + outputs #tuple with one element, the single layer output
         #TODO(yhq): add outputs before eigenvalue shift
         # if decoder, return the attn key/values as the last output
         if self.is_decoder:

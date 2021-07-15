@@ -2,7 +2,7 @@ for lnv in "soft_expand"
 do
     for apply_exrank in "add_last_afterln" "add_last_beforeln"
     do
-        for model_name in "bert-base-uncased" "albert-base-v1"
+        for model_name in "distilbert-base-uncased" "roberta-base"
         do
             for decay_alpha in "-0.2" "-0.5" "-0.8"
             do
@@ -27,4 +27,3 @@ done
 # do
 #     bash run_ner_no_trainer.sh "None" "origin" $model_name >"./outlog/0703${model_name}_Nonebaseline_alphaN01.out" 2>&1
 # done
-

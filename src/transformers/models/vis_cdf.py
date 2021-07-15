@@ -30,8 +30,8 @@ def singular_spectrum(W, norm=False):
 
 def multiCDF():
     average_batch = True
-    dataset_name = "rte"
-    model_type = "bert-base-uncased"
+    dataset_name = "mrpc"
+    model_type = "albert-base-v1"
     pic_dir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/pic/".format(dataset_name,model_type)
     # pic_dir = "/home/hanq1warwick/Data/rank_nips/eigenout/{}/{}/pic/".format(dataset_name,model_type)
     if not os.path.isdir(pic_dir):
@@ -43,20 +43,20 @@ def multiCDF():
     # markers = {"origin":"*","soft_expand":None}
     # #draw baseline cdf
     # basicDataPath = datapath = "/home/hanq1warwick/Data/rank_nips/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,"origin","2")
-    basicDataPath = datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,"origin","2")
-    basicData = np.load(basicDataPath)
-    sv=[]
-    if average_batch:
-        sv = []
-        for sample_i in range(basicData.shape[0]):
-            sv_batch, _ = singular_spectrum(basicData[sample_i,12,:,:])
-            sv.extend(sv_batch)
-    sv, _ = singular_spectrum(basicData[sample_i,12,:,:])
-    arr_1_edf = np.arange(1, 1+len(sv), 1)/len(sv)
-    arr_1_sorted = np.sort(sv/max(sv))#normalize to 1
-    plt.plot(arr_1_sorted, arr_1_edf, label='W.o.Layer12',color = "red",linewidth=1.5,linestyle="dotted")
+    # basicDataPath = datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,"origin","2")
+    # basicData = np.load(basicDataPath)
+    # sv=[]
+    # if average_batch:
+    #     sv = []
+    #     for sample_i in range(basicData.shape[0]):
+    #         sv_batch, _ = singular_spectrum(basicData[sample_i,12,:,:])
+    #         sv.extend(sv_batch)
+    # sv, _ = singular_spectrum(basicData[sample_i,12,:,:])
+    # arr_1_edf = np.arange(1, 1+len(sv), 1)/len(sv)
+    # arr_1_sorted = np.sort(sv/max(sv))#normalize to 1
+    # plt.plot(arr_1_sorted, arr_1_edf, label='W.o.Layer12',color = "red",linewidth=1.5,linestyle="dotted")
     for lnv in ["soft_expand"]:
-        for epoch in ["2"]:
+        for epoch in ["100"]:
             if lnv == "origin":
                 datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,lnv,epoch)
                 # datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,lnv,epoch)
@@ -82,7 +82,7 @@ def multiCDF():
         tick.label.set_fontsize(16)
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(16)
-    child_dir = "{}_{}LastEpoch_{}every3Layer_cdf_average_compare.pdf".format(model_type,dataset_name,epoch)
+    child_dir = "0715{}_{}LastEpoch_{}every3Layer_cdf_average_nocompare.pdf".format(model_type,dataset_name,epoch)
     pic_name = os.path.join(pic_dir,child_dir)
     plt.savefig(pic_name,dpi=500)
 

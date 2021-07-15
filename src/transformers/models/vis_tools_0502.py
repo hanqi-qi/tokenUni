@@ -370,8 +370,11 @@ if __name__=="__main__":
     args = parse_args()
     #read the savad_matrix based on the input arguments
     hidden_outputs = []
-    ho1 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv1,args.epoch, args.apply_exrank1)
-    hidden_outputs.append(np.load(ho1))
+    # ho1 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv1,args.epoch, args.apply_exrank1)
+    dataset_name = "rte"
+    model_type = "bert-base-uncased"
+    basicDataPath = datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,"origin","2")
+    hidden_outputs.append(np.load(basicDataPath))
     if not args.lnv2 == None:    
         ho2 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv2,args.epoch, args.apply_exrank2)
         hidden_outputs.append(np.load(ho2))

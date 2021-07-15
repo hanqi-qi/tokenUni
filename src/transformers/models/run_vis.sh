@@ -1,11 +1,9 @@
-python vis_tools_0502.py\
-  --model_type roberta-base \
-  --dataset_name mnli \
+python vis_hist.py\
+  --model_type bert-base-uncased \
+  --dataset_name cola \
   --mode compare \
   --lnv1 origin \
-  --lnv2 soft_expand_beta \
-  --apply_exrank1 None \
-  --apply_exrank2 replace_last\
+  --lnv2 soft_expand \
   --epoch 12000 \
 # /Epoch_0Apply_replace_lastNonelinear_relu.npy'
 
