@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 import math
 import scipy.stats as st
-from astropy.visualization import hist #flexible bins setting
+# from astropy.visualization import hist #flexible bins setting
 from scipy.stats import skew
 import os
 

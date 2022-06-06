@@ -503,6 +503,7 @@ def main():
 
     # Preprocessing the datasets
     if args.task_name is not None:
+        print("Task is %s"%args.task_name)
         sentence1_key, sentence2_key = task_to_keys[args.task_name]
     else:
         # Again, we try to have some nice defaults but don't hesitate to tweak to your use case.
@@ -566,9 +567,11 @@ def main():
         preprocess_function, batched=True, remove_columns=raw_datasets["train"].column_names
     )
 
+    print("Begin to load datasets")
     train_dataset = processed_datasets["train"]
+    #seting to be test datasets
     eval_dataset = processed_datasets["validation_matched" if args.task_name == "mnli" else "validation"]
-
+    print("Traindataset testdataset Loaded!")
     # Log a few random samples from the training set:
     for index in random.sample(range(len(train_dataset)), 3):
         logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
@@ -582,8 +585,8 @@ def main():
         # Otherwise, `DataCollatorWithPadding` will apply dynamic padding for us (by padding to the maximum length of
         # the samples passed). When using mixed precision, we add `pad_to_multiple_of=8` to pad all tensors to multiple
         # of 8s, which will enable the use of Tensor Cores on NVIDIA hardware with compute capability >= 7.5 (Volta).
-        data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=(8 if accelerator.use_fp16 else None))
-
+        # data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=(8 if accelerator.use_fp16 else None))
+        data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8 )
     train_dataloader = DataLoader(
         train_dataset, shuffle=True, collate_fn=data_collator, batch_size=args.per_device_train_batch_size
     )
@@ -689,22 +692,22 @@ def main():
                 break
             #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
             #TODO(yhq): whitebert output
-            if step%args.vis_step ==0:
-                if args.lnv=="soft_expand":
-                    print(outputs.alpha.item())
-                hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-                vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
+            # if step%args.vis_step ==0:
+            #     if args.lnv=="soft_expand":
+            #         print(outputs.alpha.item())
+            #     hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
+            #     vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
 
-        print("train_loss%.4f"%loss.item())
-        end_time = datetime.datetime.now()
-        time_list.append((end_time-start_time).seconds)
+        # print("train_loss%.4f"%loss.item())
+        # end_time = datetime.datetime.now()
+        # time_list.append((end_time-start_time).seconds)
         model.eval()
         for step, batch in enumerate(eval_dataloader):
             outputs = model(**batch)
             eval_loss = outputs.loss
-            loss_test[str(loss_x)] = eval_loss.item()
+            # loss_test[str(loss_x)] = eval_loss.item()
             predictions = outputs.logits.argmax(dim=-1) if not is_regression else outputs.logits.squeeze()
             metric.add_batch(
                 predictions=accelerator.gather(predictions),
@@ -713,8 +716,8 @@ def main():
         eval_metric = metric.compute()
         print("eval_loss%.4f"%eval_loss.item())
         logger.info(f"epoch {epoch}: {eval_metric}")
-    print("****Cost Time Every Epoch****")
-    print(sum(time_list)/len(time_list))
+    # print("****Cost Time Every Epoch****")
+    # print(sum(time_list)/len(time_list))
     if args.output_dir is not None:
         accelerator.wait_for_everyone()
         unwrapped_model = accelerator.unwrap_model(model)

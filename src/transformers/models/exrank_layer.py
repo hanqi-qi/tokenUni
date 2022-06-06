@@ -17,7 +17,7 @@ from .soft_expand import soft_exponential
 from .soft_transform import soft_yhq
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltno
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import pandas as pd
@@ -73,9 +73,9 @@ class LayerNormImpl(nn.Module):
         #TODO(yhq0513): dim=768, hidden_dim=4*dim
         #TODO(byj):
         self.hidden = 768
-        self.decay_alpha = args.decay_alpha
-        self.ifmask = args.ifmask
-        self.llayer = llayer
+        self.decay_alpha = -0.2
+        self.ifmask = False
+        self.llayer = False
         self.soft_exp = soft_exponential(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
         # self.soft_yhq = soft_yhq(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)      
         # self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
@@ -123,6 +123,11 @@ class LayerNormImpl(nn.Module):
             # nn.init.zeros_()
 
     def forward(self, input):
+        seed = np.random.choice(30,1)
+        if seed[0] == 1:
+            self.norm_mode = "soft_expand"
+        else:
+            self.norm_mode = "origin"
         if self.norm_mode == 'exrank_gx' or self.llayer: #apply regularization to g(x) weight
             mean = input.mean(dim=-1, keepdim=True)
             std = input.std(dim=-1, keepdim=True)
@@ -196,7 +201,13 @@ class LayerNormImpl(nn.Module):
             rescale_s_dia = torch.diag_embed(newS,dim1=-2,dim2=-1)
             new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
             # print(alpha.item())
-            return (new_input,alpha) 
+            return (new_input,alpha)
+        elif self.norm_mode == "e_decay": #042022 expontialDecay function 
+            u,s,v = torch.svd(input) #s [bs,seq_len]
+            rescale_s_dia = torch.diag_embed(s,dim1=-2,dim2=-1)
+            new_input = torch.matmul(torch.matmul(u,rescale_s_dia),v.transpose(2,1))
+            #add regulariztion to s
+            return (new_input,s)
         # elif self.norm_mode == "soft_expand_beta":
         #     u,s,v = torch.svd(input)
         #     maxS = torch.max(s,dim=1).values.unsqueeze(-1)

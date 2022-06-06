@@ -435,35 +435,51 @@ class BertOutput(nn.Module):
         self.LayerNorm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.exrank_layer = ExRank_gx(config)
+
         # print("Mode for applying EXRANK!!!")
         # print(self.config.apply_exrank)
-
     def forward(self, hidden_states, input_tensor,i_layer):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.dropout(hidden_states)
-        # old_states = hidden_states
-        #TODO(yhq): replace the original layernorm before the output at each layer
-        #TODO(yhq0512):
-        if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
-            old_hidden_states = hidden_states+input_tensor
-            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
-        elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
-            hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
-            hidden_states = self.LayerNorm(hidden_states + input_tensor)
-        elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
-            hidden_states = self.LayerNorm(hidden_states + input_tensor)
-            hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
-        elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
+
+        if i_layer == self.config.num_hidden_layers-1:
             hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
         else:#0-10 layers
             hidden_states = self.LayerNorm(hidden_states + input_tensor)
             # old_hidden_states = hidden_states
         #TODO(yhq:0615)
-        if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
+        if i_layer == self.config.num_hidden_layers-1:
             return (hidden_states,alpha)
         else:
             return (hidden_states,)
+
+    # def forward(self, hidden_states, input_tensor,i_layer):
+    #     hidden_states = self.dense(hidden_states)
+    #     hidden_states = self.dropout(hidden_states)
+    #     # old_states = hidden_states
+    #     #TODO(yhq): replace the original layernorm before the output at each layer
+    #     #TODO(yhq0512):
+    #     if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
+    #         old_hidden_states = hidden_states+input_tensor
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
+    #     elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #     elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #         hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+    #     elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
+    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #     else:#0-10 layers
+    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
+    #         # old_hidden_states = hidden_states
+    #     #TODO(yhq:0615)
+    #     if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
+    #         return (hidden_states,alpha)
+    #     else:
+    #         return (hidden_states,)
 
 
 class BertLayer(nn.Module):
@@ -535,7 +551,8 @@ class BertLayer(nn.Module):
         #TODO(yhq): modify this function to achieve settings for various layers
         layer_output = apply_chunking_to_forward(
             self.feed_forward_chunk, i_layer, self.chunk_size_feed_forward, self.seq_len_dim, attention_output)
-        outputs = (layer_output[0],) + outputs #tuple with one element, the single layer output
+        outputs = (layer_output[0],) + outputs #tuple with one element, the single layer output. For e_decay function, we need to regularize the sigma matrix,
+
         #TODO(yhq): add outputs before eigenvalue shift
         # if decoder, return the attn key/values as the last output
         if self.is_decoder:
@@ -1589,6 +1606,17 @@ class BertForSequenceClassification(BertPreTrainedModel):#sentence-level, use th
         logits = self.classifier(pooled_output)
 
         loss = None
+        #add regularization for e_decay function
+        # k = 5
+        # c1 = 1
+        # c2 = 1
+        # lamb = 2
+        # base_tensor = torch.range(1, k).long()
+        # exp_tensor = c1*torch.exp(-c2*base_tensor^lamb)
+        # topk_sigma,_ = torch.topk(outputs.alpha, k)
+        # exp_tensor_bs = exp_tensor.expand_as(topk_sigma)
+        # e_decay_loss = torch.sum((topk_sigma-exp_tensor_bs.to(topk_sigma.cuda())))
+
         if labels is not None:
             if self.num_labels == 1:
                 #  We are doing regression
@@ -1598,6 +1626,7 @@ class BertForSequenceClassification(BertPreTrainedModel):#sentence-level, use th
                 loss_fct = CrossEntropyLoss()
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
 
+        # loss += 0.0001*e_decay_loss
         if not return_dict:
             output = (logits,) + outputs[2:]
             return ((loss,) + output) if loss is not None else output
@@ -1909,3 +1938,4 @@ class BertForQuestionAnswering(BertPreTrainedModel):
             attentions=outputs.attentions,
             alpha=outputs.alpha,
         )
+
