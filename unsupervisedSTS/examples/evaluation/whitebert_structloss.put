@@ -1,0 +1,108 @@
+2021-07-07 22:38:21 - Use pytorch device: cuda
+2021-07-07 22:38:21 - Pool:aver, Encoder:bert-base-uncased, Whitening:True
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9108) tensor(1.8680) tensor(1.2175) tensor(1.2255)
+2021-07-07 22:38:25 - Eval on sts-b-white:Cosine :	Pearson: 0.6748	Spearman: 0.6872
+Using whitebert Transformation Method
+After transformation:
+tensor(2.5750) tensor(2.5797) tensor(1.3418) tensor(1.3306)
+2021-07-07 22:38:32 - Eval on sickr-white:Cosine :	Pearson: 0.5644	Spearman: 0.6043
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9385) tensor(2.1454) tensor(1.1355) tensor(1.1583)
+2021-07-07 22:38:37 - Eval on sts12.MSRpar-white:Cosine :	Pearson: 0.5531	Spearman: 0.5211
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9505) tensor(2.1316) tensor(1.1403) tensor(1.1615)
+2021-07-07 22:38:41 - Eval on sts12.MSRvid-white:Cosine :	Pearson: 0.7816	Spearman: 0.8069
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9183) tensor(2.1245) tensor(1.1467) tensor(1.1499)
+2021-07-07 22:38:46 - Eval on sts12.SMTeuroparl-white:Cosine :	Pearson: 0.4617	Spearman: 0.5744
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9675) tensor(2.1560) tensor(1.1474) tensor(1.1593)
+2021-07-07 22:38:51 - Eval on sts12.surprise.OnWN-white:Cosine :	Pearson: 0.6866	Spearman: 0.6730
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9421) tensor(2.1239) tensor(1.1461) tensor(1.1519)
+2021-07-07 22:38:56 - Eval on sts12.surprise.SMTnews-white:Cosine :	Pearson: 0.4667	Spearman: 0.5347
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9567) tensor(1.9240) tensor(1.2080) tensor(1.2173)
+2021-07-07 22:38:58 - Eval on sts13.FNWN-white:Cosine :	Pearson: 0.4751	Spearman: 0.5255
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9660) tensor(1.9267) tensor(1.2073) tensor(1.2180)
+2021-07-07 22:39:00 - Eval on sts13.headlines-white:Cosine :	Pearson: 0.7010	Spearman: 0.7236
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9340) tensor(1.9467) tensor(1.2080) tensor(1.2187)
+2021-07-07 22:39:02 - Eval on sts13.OnWN-white:Cosine :	Pearson: 0.8028	Spearman: 0.8065
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9821) tensor(2.0829) tensor(1.3181) tensor(1.3264)
+2021-07-07 22:39:07 - Eval on sts14.deft-forum-white:Cosine :	Pearson: 0.4411	Spearman: 0.4314
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9840) tensor(2.0712) tensor(1.3139) tensor(1.3288)
+2021-07-07 22:39:13 - Eval on sts14.deft-news-white:Cosine :	Pearson: 0.7212	Spearman: 0.6773
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9731) tensor(2.0813) tensor(1.3147) tensor(1.3251)
+2021-07-07 22:39:18 - Eval on sts14.headlines-white:Cosine :	Pearson: 0.6849	Spearman: 0.6787
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9752) tensor(2.0656) tensor(1.3117) tensor(1.3235)
+2021-07-07 22:39:24 - Eval on sts14.images-white:Cosine :	Pearson: 0.7021	Spearman: 0.7109
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9736) tensor(2.0608) tensor(1.3131) tensor(1.3251)
+2021-07-07 22:39:29 - Eval on sts14.OnWN-white:Cosine :	Pearson: 0.8296	Spearman: 0.8388
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9899) tensor(2.0576) tensor(1.3107) tensor(1.3259)
+2021-07-07 22:39:35 - Eval on sts14.tweet-news-white:Cosine :	Pearson: 0.7128	Spearman: 0.7036
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9503) tensor(1.9837) tensor(1.0307) tensor(1.0257)
+2021-07-07 22:39:39 - Eval on sts15.answers-forums-white:Cosine :	Pearson: 0.7027	Spearman: 0.7237
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9490) tensor(1.9150) tensor(1.0270) tensor(1.0247)
+2021-07-07 22:39:44 - Eval on sts15.answers-students-white:Cosine :	Pearson: 0.6243	Spearman: 0.6848
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9503) tensor(1.9413) tensor(1.0300) tensor(1.0257)
+2021-07-07 22:39:48 - Eval on sts15.belief-white:Cosine :	Pearson: 0.7744	Spearman: 0.7878
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9503) tensor(1.9343) tensor(1.0233) tensor(1.0160)
+2021-07-07 22:39:53 - Eval on sts15.headlines-white:Cosine :	Pearson: 0.7395	Spearman: 0.7563
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9503) tensor(1.9123) tensor(1.0243) tensor(1.0220)
+2021-07-07 22:39:57 - Eval on sts15.images-white:Cosine :	Pearson: 0.7595	Spearman: 0.7841
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9933) tensor(1.9511) tensor(1.2656) tensor(1.3120)
+2021-07-07 22:39:59 - Eval on sts16.answer-answer-white:Cosine :	Pearson: 0.5182	Spearman: 0.5292
+Using whitebert Transformation Method
+After transformation:
+tensor(2.0278) tensor(1.9503) tensor(1.2622) tensor(1.3145)
+2021-07-07 22:40:01 - Eval on sts16.headlines-white:Cosine :	Pearson: 0.6873	Spearman: 0.7254
+Using whitebert Transformation Method
+After transformation:
+tensor(1.9823) tensor(1.9503) tensor(1.2648) tensor(1.3162)
+2021-07-07 22:40:03 - Eval on sts16.plagiarism-white:Cosine :	Pearson: 0.6542	Spearman: 0.7514
+Using whitebert Transformation Method
+After transformation:
+tensor(2.0017) tensor(1.9460) tensor(1.2648) tensor(1.3128)
+2021-07-07 22:40:05 - Eval on sts16.postediting-white:Cosine :	Pearson: 0.8732	Spearman: 0.8782
+Using whitebert Transformation Method
+After transformation:
+tensor(2.0346) tensor(1.9503) tensor(1.2597) tensor(1.3120)
+2021-07-07 22:40:07 - Eval on sts16.question-question-white:Cosine :	Pearson: 0.6980	Spearman: 0.7368
+2021-07-07 22:40:07 - sts-b 	sickr 	sts12 	sts13 	sts14 	sts15 	sts16 	Overall.
+2021-07-07 22:40:07 - 68.72 	60.43 	62.20 	68.52 	67.35 	74.73 	72.42 	67.77

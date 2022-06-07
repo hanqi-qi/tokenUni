@@ -1,9 +1,5 @@
 for lnv in "origin"
 do
-<<<<<<< HEAD
-    for apply_exrank in "add_last_beforeln"
-=======
-<<<<<<< HEAD
     for apply_exrank in "add_last_beforeln"
     do
         for model_name in "bert-base-uncased"

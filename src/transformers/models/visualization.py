@@ -27,6 +27,20 @@ import torch.nn.functional as F
 
 
 # root_dir = "/mnt/Data3/hanqiyan/rank_transformers"
+def save_matrix(input_tensor,epoch,config,mode="train",timestamp='new'):
+    #input_tensor: [n_samples,layers,sequen_len,dim]
+    W = np.array(input_tensor.data.clone().cpu()) #
+    if mode == "train":
+        epoch = str(epoch)
+    elif mode == 'eval':
+        epoch = "EVAL:"+str(epoch)
+    parent_dir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}".format(config.dataset_name,config.model_name_or_path,config.lnv)
+    matrix_path =  "fixweight_Epoch{}_{}.npy".format(epoch,config.apply_exrank)
+    matrix_name = os.path.join(parent_dir,matrix_path)
+    if not os.path.isdir(parent_dir):
+        os.makedirs(parent_dir)
+    np.save(matrix_name,W) #np.load(OutputTensor)
+    
 def singular_spectrum(W, norm=False): 
     if norm:
         W = W/np.trace(W)

@@ -54,7 +54,7 @@ from transformers import DistilBertConfig
 from transformers import AlbertConfig
 from transformers import RobertaConfig
 
-from transformers.models import vis_tools
+from transformers.models import visualization
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
@@ -609,11 +609,12 @@ def main():
 
             if completed_steps >= args.max_train_steps:
                 break
-            # if step%10000 ==0:
-                # if args.lnv=="soft_decay":
-                    # print(outputs.alpha.item())
+            if step%10000 ==0:
+                if args.lnv=="soft_decay":
+                    print(outputs.alpha.item())
                 hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-                # vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
+                #save hidden states for different epoches
+                visualization.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
         model.eval()
