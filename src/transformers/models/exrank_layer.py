@@ -12,9 +12,7 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torch.autograd import Variable
-from .soft_expand import soft_exponential
-# from .soft_expand_beta import soft_exponential_beta
-from .soft_transform import soft_yhq
+from .soft_decay import soft_decay_function
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as pltno
@@ -76,21 +74,21 @@ class LayerNormImpl(nn.Module):
         self.decay_alpha = -0.2
         self.ifmask = False
         self.llayer = False
-        self.soft_exp = soft_exponential(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
+        self.soft_exp = soft_decay_function(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
         # self.soft_yhq = soft_yhq(in_features=args.max_length,alpha=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)      
         # self.soft_exp_beta = soft_exponential_beta(in_features=args.max_length,alpha=None,beta=None,hidden_dim=self.hidden,decay_alpha=self.decay_alpha,ifmask=self.ifmask)
-        if args.spectral_norm == True:
-            # print("use spec")
-            self.raw_exrank = nn.Linear(self.hidden,self.hidden)
-            self.exrank_linear = torch.nn.utils.spectral_norm(self.raw_exrank)
-        else:
-            self.exrank_linear = nn.Linear(hidden,hidden)
-        if args.exrank_nonlinear == 'relu':
-            self.exrank_nonlinear = nn.ReLU()
-        elif args.exrank_nonlinear == 'selu':
-            self.exrank_nonlinear = nn.SELU()
-        elif args.exrank_nonlinear == "elu":
-            self.exrank_nonlinear = nn.ELU()
+        # if args.spectral_norm == True:
+        #     # print("use spec")
+        #     self.raw_exrank = nn.Linear(self.hidden,self.hidden)
+        #     self.exrank_linear = torch.nn.utils.spectral_norm(self.raw_exrank)
+        # else:
+        #     self.exrank_linear = nn.Linear(hidden,hidden)
+        # if args.exrank_nonlinear == 'relu':
+        self.exrank_nonlinear = nn.ReLU()
+        # elif args.exrank_nonlinear == 'selu':
+        #     self.exrank_nonlinear = nn.SELU()
+        # elif args.exrank_nonlinear == "elu":
+        #     self.exrank_nonlinear = nn.ELU()
     
         self.rescale_weight = nn.Parameter(torch.Tensor(args.max_seq_length,hidden))
         #TODO(yhq): init the gamma in different ways, should rela
@@ -125,10 +123,10 @@ class LayerNormImpl(nn.Module):
     def forward(self, input):
         seed = np.random.choice(30,1)
         if seed[0] == 1:
-            self.norm_mode = "soft_expand"
+            self.norm_mode = "soft_decay"
         else:
             self.norm_mode = "origin"
-        if self.norm_mode == 'exrank_gx' or self.llayer: #apply regularization to g(x) weight
+        if self.norm_mode == 'soft_decay' or self.llayer: #apply regularization to g(x) weight
             mean = input.mean(dim=-1, keepdim=True)
             std = input.std(dim=-1, keepdim=True)
             input_norm = (input-mean)/(std+self.eps)

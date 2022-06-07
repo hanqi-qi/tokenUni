@@ -14,7 +14,7 @@
 # limitations under the License.
 """PyTorch ALBERT model. """
 
-from ..exrank_layer import NormFuncs #import the exrank module
+from ..transform_layer import NormFuncs #import the exrank module
 import math
 import os
 from dataclasses import dataclass

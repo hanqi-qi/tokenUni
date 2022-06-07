@@ -15,7 +15,7 @@
 # limitations under the License.
 """PyTorch BERT model. """
 
-from ..exrank_layer import NormFuncs
+from ..transform_layer import NormFuncs
 import math
 import os
 import warnings
@@ -454,33 +454,6 @@ class BertOutput(nn.Module):
         else:
             return (hidden_states,)
 
-    # def forward(self, hidden_states, input_tensor,i_layer):
-    #     hidden_states = self.dense(hidden_states)
-    #     hidden_states = self.dropout(hidden_states)
-    #     # old_states = hidden_states
-    #     #TODO(yhq): replace the original layernorm before the output at each layer
-    #     #TODO(yhq0512):
-    #     if self.config.apply_exrank == "replace_all" or (self.config.apply_exrank == "replace_last" and (i_layer == self.config.num_hidden_layers-1)):#11-layer
-    #         old_hidden_states = hidden_states+input_tensor
-    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)
-    #     elif self.config.apply_exrank == "add_all" or (self.config.apply_exrank == "add_last" and (i_layer==self.config.num_hidden_layers-1)):
-    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#[]
-    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
-    #     elif self.config.apply_exrank == "add_all_afterln" or (self.config.apply_exrank == "add_last_afterln" and i_layer == self.config.num_hidden_layers-1):
-    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
-    #         hidden_states,alpha = self.exrank_layer(hidden_states + input_tensor)#input[bs,sq_len,dim],output[bs,dim]
-    #     elif self.config.apply_exrank == "add_all_beforeln" or (self.config.apply_exrank == "add_last_beforeln" and i_layer == self.config.num_hidden_layers-1):
-    #         hidden_states,alpha = self.exrank_layer(hidden_states+input_tensor)#input[bs,sq_len,dim],output[bs,dim]
-    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
-    #     else:#0-10 layers
-    #         hidden_states = self.LayerNorm(hidden_states + input_tensor)
-    #         # old_hidden_states = hidden_states
-    #     #TODO(yhq:0615)
-    #     if i_layer == self.config.num_hidden_layers-1 and self.config.lnv == "soft_expand":
-    #         return (hidden_states,alpha)
-    #     else:
-    #         return (hidden_states,)
-
 
 class BertLayer(nn.Module):
     def __init__(self, config):
@@ -548,20 +521,16 @@ class BertLayer(nn.Module):
             # add cross-attn cache to positions 3,4 of present_key_value tuple
             cross_attn_present_key_value = cross_attention_outputs[-1]
             present_key_value = present_key_value + cross_attn_present_key_value
-        #TODO(yhq): modify this function to achieve settings for various layers
+
         layer_output = apply_chunking_to_forward(
             self.feed_forward_chunk, i_layer, self.chunk_size_feed_forward, self.seq_len_dim, attention_output)
-        outputs = (layer_output[0],) + outputs #tuple with one element, the single layer output. For e_decay function, we need to regularize the sigma matrix,
-
-        #TODO(yhq): add outputs before eigenvalue shift
-        # if decoder, return the attn key/values as the last output
+        outputs = (layer_output[0],) + outputs
         if self.is_decoder:
             outputs = outputs + (present_key_value,)
         return outputs,layer_output[-1]
 
     def feed_forward_chunk(self, attention_output,i_layer):#
         intermediate_output = self.intermediate(attention_output)
-        #TODO(yhq): add hidden_states output before the "eigenValue shift" algorithm
         layer_output = self.output(intermediate_output, attention_output,i_layer)
         return layer_output
 
@@ -592,8 +561,6 @@ class BertEncoder(nn.Module):
         all_cross_attentions = () if output_attentions and self.config.add_cross_attention else None
 
         next_decoder_cache = () if use_cache else None
-        #TODO(yhq): save the hidden_states for all layers
-        # hidden_states_all = []
         for i, layer_module in enumerate(self.layer):
             if output_hidden_states:
                 all_hidden_states = all_hidden_states + (hidden_states,)

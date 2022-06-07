@@ -19,7 +19,7 @@ import math
 import textwrap
 import os
 import random
-#from adjustText import adjust_text
+# from adjustText import adjust_text
 import torch
 import datetime
 import numpy as np
@@ -77,17 +77,7 @@ task_to_keys = {
     "stsb": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-# def lossCurve(train_loss, test_loss,args):
-#     x1 = train_loss.keys()
-#     x2 = test_loss.keys()
-#     y1 = train_loss.values()
-#     y2 = test_loss.values()
-#     plt.plot(x1,y1)
-#     plt.plot(x2,y2)
-#     parent_dir = args.output_dir
-#     child_dir = "{}_{}.png".format(args.lnv,args.apply_exrank)
-#     pic_name = os.path.join(parent_dir,child_dir)
-#     plt.savefig(pic_name)
+
 def singular_spectrum(W, norm=False): 
     if norm:
         W = W/np.trace(W)
@@ -124,62 +114,6 @@ def vis_eigenValue(tokens_matrix,i_layer,batch_id,pic_dir,epoch,rank,simiValue):
     ax.text(ax.get_xlim()[1]*0.8,0.01*ax.get_ylim()[1],"mean:"+str("%.2f"%sv_stats_ori.mean)+"\n"+"maxmin:("+str("%.2f"%sv_stats_ori.minmax[0])+","+str("%.2f"%sv_stats_ori.minmax[1])+")"+"\n"+"variance:"+str("%.2f"%sv_stats_ori.variance)+"\n"+"skewness:"+str("%.2f"%sv_stats_ori.skewness)+"\n"+"kurtosis:"+str("%.2f"%sv_stats_ori.kurtosis)+"\n"+"rank:"+str("%d"%rank))
     plt.savefig(os.path.join(pic_dir,"HistEpoch_{}BatchId_{}Layer_{}.png".format(epoch,batch_id,i_layer)))
 
-def vis_tokenUni(hidden_states,input_ids,labels,tokenizer,pic_dir,ifpca,args,epoch):
-    # time_start = time.time()
-    hidden_states = torch.stack(hidden_states).permute(1,0,2,3)
-    batch_id = 0
-    for batch_id in range(hidden_states.shape[0]):
-        tokens_layers =  hidden_states[batch_id].cpu().detach().numpy()
-        label_batch  = labels[batch_id].cpu().detach().numpy()
-        for i_layer in range(tokens_layers.shape[0]):
-            tokens_matrix = tokens_layers[i_layer]
-            
-            if args.model_name_or_path == "bert-base-uncased":
-                endToken = "[SEP]"
-            elif args.model_name_or_path == "roberta-base":
-                    endToken = "</s>"
-            split_token = "."
-            sentence = tokenizer.decode(input_ids[batch_id]).split(endToken)[0]
-            sent1_end = len(sentence.split(" "))
-            # sent1_end = len(sent1.split(" "))
-            text_tokens = " ".join((tokenizer.decode(input_ids[batch_id]).split(endToken))[:-1]).split(" ")
-            #only visualize the sequence longer than 20
-            if label_batch == 0:
-                rank = np.linalg.matrix_rank(tokens_matrix)
-                simiValue=tokenSimi(tokens_matrix=tokens_matrix,seqlen=len(text_tokens),nopad=False)
-                #visualize the hist and cdf of the current token sequence.
-                vis_eigenValue(tokens_matrix,i_layer,batch_id,pic_dir,epoch,rank,simiValue)
-                if ifpca:
-                    n_components = min(tokens_matrix.shape[0],tokens_matrix.shape[1])
-                    pca_50 = PCA(n_components=n_components)
-                    pca_result_50 = pca_50.fit_transform(tokens_matrix)
-                    tokens = pca_result_50
-                tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
-                tsne_results = tsne.fit_transform(tokens)
-                #calculate the token_similarity. nopad==True:clip the [PAD]
-                
-                d = {'tsne-2d-one': tsne_results[:,0][:len(text_tokens)], 'tsne-2d-two':tsne_results[:,1][:len(text_tokens)],'point_name':text_tokens}
-                df_subset = pd.DataFrame(data=d)
-                fig,ax = plt.subplots(figsize=(8, 8))
-                df_subset.plot.scatter(x="tsne-2d-one",y="tsne-2d-two",s=25,ax=ax)
-                texts = []
-                i = 0
-                for x, y, s in zip(df_subset["tsne-2d-one"], df_subset["tsne-2d-two"], df_subset["point_name"]):
-                    if len(s)>0:
-                        if i<sent1_end:
-                            texts.append(plt.text(x, y, s,color = "red",size=14))
-                        else:
-                            texts.append(plt.text(x, y, s,color = "blue",size=14))
-                    i +=1
-                adjust_text(texts, only_move={'points':'y', 'texts':'y'}, arrowprops=dict(arrowstyle="->", color='r', lw=0.5))
-                plt.title("{}_{}_layer{}Epoch_{}".format(args.model_name_or_path,args.task_name,i_layer,epoch))#adjust the token annotation
-                sentence = " ".join(text_tokens)
-                multi_sen=textwrap.wrap(sentence,width=75)
-                new_sen = "\n".join(multi_sen)
-                plt.xlabel(new_sen)
-                picname = os.path.join(pic_dir,"0529color_tokenDisEpoch_{}BatchId_{}_Layer_{}.png".format(epoch,batch_id,i_layer))
-                plt.savefig(picname)
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
 
@@ -188,7 +122,7 @@ def parse_args():
         "--apply_exrank",
         type=str,
         default=None,
-        help="different methods to apply our exrank layer, just add or replace original layernorm, at the last layer or for each layer"
+        help="different methods to apply our exrank layer, at the last layer or for each layer"
     )
     parser.add_argument(
         "--dataset_name",
@@ -571,7 +505,9 @@ def main():
     train_dataset = processed_datasets["train"]
     #seting to be test datasets
     eval_dataset = processed_datasets["validation_matched" if args.task_name == "mnli" else "validation"]
-    print("Traindataset testdataset Loaded!")
+    predict_dataset = processed_datasets["validation_matched" if args.task_name == "mnli" else "test"]
+
+
     # Log a few random samples from the training set:
     for index in random.sample(range(len(train_dataset)), 3):
         logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
@@ -592,34 +528,22 @@ def main():
     )
     eval_dataloader = DataLoader(eval_dataset, collate_fn=data_collator, batch_size=args.per_device_eval_batch_size)
 
+
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
     no_decay = ["bias", "LayerNorm.weight"]
-    no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias"]
-    alpha_decay = ["alpha"]
-    # optimizer_grouped_parameters = [
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-    #         "weight_decay": args.weight_decay,
-    #     },
-    #     {
-    #         "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-    #         "weight_decay": 0.0,
-    #     },
-    # ]
+    no_fix_weight = ["bert.pooler.dense.weight",'bert.pooler.dense.bias',"classifier.weight","classifier.bias","alpha"]
     optimizer_grouped_parameters = [
         {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in alpha_decay)],
-            "lr": args.learning_rate,
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "weight_decay": args.weight_decay,
         },
         {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in alpha_decay)],
-            "lr": args.alpha_lr,
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+            "weight_decay": 0.0,
         },
     ]
-
-    optimizer = AdamW(optimizer_grouped_parameters)
-    # optimizer = AdamW(optimizer_grouped_parameters, lr = args.learning_rate)
+    optimizer = AdamW(optimizer_grouped_parameters, lr = 2e-5)
     # Prepare everything with our `accelerator`.
     model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
         model, optimizer, train_dataloader, eval_dataloader
@@ -665,11 +589,6 @@ def main():
     loss_train,loss_test = {},{}
     loss_x = 0
 
-    #picdir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/token_uni/{}/{}".format(args.task_name,args.model_name_or_path,args.lnv)
-    #if os.path.isdir(picdir):
-        #shutil.rmtree(picdir)
-    #if not os.path.isdir(picdir):
-        #os.makedirs(picdir)
     ifpca = True
     for epoch in range(args.num_train_epochs):
         start_time = datetime.datetime.now()
@@ -690,19 +609,13 @@ def main():
 
             if completed_steps >= args.max_train_steps:
                 break
-            #TODO(yhq):save the intermediate hidden_states every vis_epoch. only for the 
-            #TODO(yhq): whitebert output
-            # if step%args.vis_step ==0:
-            #     if args.lnv=="soft_expand":
-            #         print(outputs.alpha.item())
-            #     hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
-            #     vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
+            # if step%10000 ==0:
+                # if args.lnv=="soft_decay":
+                    # print(outputs.alpha.item())
+                hidden_states_layers = torch.stack(outputs.hidden_states).permute(1,0,2,3)#[sample_i,i_layer,seqlen,dim]
+                # vis_tools.save_matrix(hidden_states_layers,epoch,args,mode="train",timestamp="new")
                 # vis_tokenUni(outputs.hidden_states,batch["input_ids"],batch["labels"],tokenizer,picdir,ifpca,args,step)
             
-
-        # print("train_loss%.4f"%loss.item())
-        # end_time = datetime.datetime.now()
-        # time_list.append((end_time-start_time).seconds)
         model.eval()
         for step, batch in enumerate(eval_dataloader):
             outputs = model(**batch)
@@ -716,8 +629,6 @@ def main():
         eval_metric = metric.compute()
         print("eval_loss%.4f"%eval_loss.item())
         logger.info(f"epoch {epoch}: {eval_metric}")
-    # print("****Cost Time Every Epoch****")
-    # print(sum(time_list)/len(time_list))
     if args.output_dir is not None:
         accelerator.wait_for_everyone()
         unwrapped_model = accelerator.unwrap_model(model)
@@ -744,8 +655,27 @@ def main():
 
         eval_metric = metric.compute()
         logger.info(f"mnli-mm: {eval_metric}")
-        
 
+    # predict_datasets = [predict_dataset]
+    # for predict_dataset, task in zip(predict_datasets, tasks):
+    #         # Removing the `label` columns because it contains -1 and Trainer won't like that.
+    #     predict_dataset = predict_dataset.remove_columns("label")
+    #     predictions = trainer.predict(predict_dataset, metric_key_prefix="predict").predictions
+    #     predictions = np.squeeze(predictions) if is_regression else np.argmax(predictions, axis=1)
+
+    #     output_predict_file = os.path.join(args.output_dir, f"predict_results_{task}.txt")
+
+    #     with open(output_predict_file, "w") as writer:
+    #         logger.info(f"***** Predict results {task} *****")
+    #         writer.write("index\tprediction\n")
+    #         for index, item in enumerate(predictions):
+    #             if is_regression:
+    #                 writer.write(f"{index}\t{item:3.3f}\n")
+    #             else:
+    #                 item = label_list[item]
+    #                 writer.write(f"{index}\t{item}\n")
+        
+    
 
 if __name__ == "__main__":
     main()

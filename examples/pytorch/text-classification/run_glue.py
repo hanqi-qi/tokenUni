@@ -25,7 +25,10 @@ from typing import Optional
 
 import numpy as np
 from datasets import load_dataset, load_metric
-
+import sys
+sys.path.pop()
+sys.path.insert(0,"/home/hanqiyan/repGeo/transformers/tokenUni/src/")
+sys.path.insert(0,"")
 import transformers
 from transformers import (
     AutoConfig,
@@ -172,6 +175,7 @@ class ModelArguments:
             "with private models)."
         },
     )
+
 
 
 def main():

@@ -58,17 +58,51 @@ def rbf_kernel(input,unif_t):
     uni_loss = sq_pdist.mul(-unif_t).exp().mean().log() #results are negative one, the maximal value is zero, for visualization, using the exp(uni_loss) to transform the range to [0,1]
     return uni_loss
 
-# def isotropy(input):
-
-#     return 
-
 def Evs(input,k):
     """calcualte EV_{k}(h) from https://arxiv.org/pdf/2005.02178.pdf"""
     _,s,_ = torch.svd(input)
     ek = [s[i]*s[i] for i in range(k)]
     ed = [s[i]*s[i] for i in range(len(s)-k,len(s))]
     return sum(ek)/sum(ed)
-
+def multiCDF():
+    dataset_name = "mrpc"
+    model_type = "bert-base-uncased"
+    pic_dir = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/pic/".format("glue",model_type)
+    if not os.path.isdir(pic_dir):
+        os.makedirs(pic_dir)
+    plt.subplots(figsize=(8, 4))
+    colors = ["blue","red","cyan","black","green"]
+    # #draw baseline cdf
+    # basicDataPath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/mrpc/bert-base-uncased/weight/origin/fixedweight_Epoch0_None.npy"
+    # basicData = np.load(basicDataPath)
+    # sample_i = 0
+    # layer_i = -1
+    # sv, _ = singular_spectrum(basicData[sample_i,layer_i,:,:])
+    # arr_1_edf = np.arange(1, 1+len(sv), 1)/len(sv)
+    # arr_1_sorted = np.sort(sv/max(sv))#normalize to 1
+    # plt.plot(arr_1_sorted, arr_1_edf, label='W.o fine-tuning',color = "black",linewidth=1)
+    for lnv in ["origin","soft_expand"]:
+        for epoch in ["0","1","2"]:
+        #read the npy data and draw the CDF curve
+            if lnv == "origin":
+                datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,lnv,epoch)
+            elif lnv == "soft_expand":
+                datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_add_last_beforeln.npy".format(dataset_name,model_type,lnv,epoch)
+            basicData = np.load(datapath)
+            sample_i = 0
+            for layer_i in basicData.shape[0]:
+                if layer_i%3==0:
+                    sv, _ = singular_spectrum(basicData[sample_i,layer_i,:,:])
+                    arr_1_edf = np.arange(1, 1+len(sv), 1)/len(sv)
+                    arr_1_sorted = np.sort(sv/max(sv))
+                    plt.plot(arr_1_sorted, arr_1_edf, label='%sLayer%d'%(lnv,layer_i),color = colors[int(layer_i/3)],linewidth=1)
+    plt.legend()
+    plt.title("CDF for %s Task at Different Layers" %(dataset_name))
+    plt.ylabel("F(x)")
+    plt.xlabel('x')
+    child_dir = "LastEpoch_{}AllLayer_cdf_average.pdf".format(epoch)
+    pic_name = os.path.join(pic_dir,child_dir)
+    plt.savefig(pic_name,dpi=500)
 
 #TODO(yhq0528): 
 def draw_cdf(hidden_outputs,args,n_bins,metrics):
@@ -336,8 +370,11 @@ if __name__=="__main__":
     args = parse_args()
     #read the savad_matrix based on the input arguments
     hidden_outputs = []
-    ho1 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv1,args.epoch, args.apply_exrank1)
-    hidden_outputs.append(np.load(ho1))
+    # ho1 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv1,args.epoch, args.apply_exrank1)
+    dataset_name = "rte"
+    model_type = "bert-base-uncased"
+    basicDataPath = datapath = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch{}_None.npy".format(dataset_name,model_type,"origin","2")
+    hidden_outputs.append(np.load(basicDataPath))
     if not args.lnv2 == None:    
         ho2 = "/mnt/Data3/hanqiyan/rank_transformer/eigenout/{}/{}/weight/{}/Epoch_{}Apply_{}Nonlinear_relu_new.npy".format(args.dataset_name,args.model_type,args.lnv2,args.epoch, args.apply_exrank2)
         hidden_outputs.append(np.load(ho2))

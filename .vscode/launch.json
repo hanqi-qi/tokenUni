@@ -105,6 +105,7 @@
                 "--model_name_or_path",
                 "bert-base-uncased",
                 "--task_name",
+<<<<<<< HEAD
                 "cola",
                 "--learning_rate",
                 "2e-5",
@@ -122,6 +123,27 @@
                 "True",
                 "--max_length",
                 "128",
+=======
+                "stsb",
+                // "--learning_rate",
+                // "2e-5",
+                // "--num_train_epochs",
+                // "3",
+                "--output_dir",
+                "/mnt/Data3/hanqiyan/rank_transformers/tmp/debug_glue/stsb_test",
+                // "--apply_exrank",
+                // "add_last_afterln",
+                // "--lnv",
+                // "soft_expand",
+                // "--spectral_norm",
+                // "True",
+                // "--exrank_nonlinear",
+                // "relu",
+                // "--ifmask",
+                // "True",
+                // "--max_length",
+                // "128",
+>>>>>>> 2f31e9d9d9bf8ee0afecfb104fd91e052b75d82d
             ]
         },
         {

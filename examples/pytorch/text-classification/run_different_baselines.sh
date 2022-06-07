@@ -1,7 +1,7 @@
-for model_name in "albert-base-v1"
+for model_name in "bert-base-uncased"
 do
-    for TASK_NAME in "sst2" "qnli" "rte" "cola" "mrpc" 
+    for TASK_NAME in "rte"
     do 
-        bash run_glue_baselines.sh "None" "origin" $TASK_NAME $model_name >"./outlog/0708${model_name}_${TASK_NAME}_None_baseline.out" 2>&1
+        bash run_glue_baselines.sh "None" "origin" $TASK_NAME $model_name >"./outlog/0606${model_name}_${TASK_NAME}_None_baseline.out" 2>&1
     done
 done
