@@ -41,14 +41,17 @@ This code [visualization.py](tokenUni/src/transformers/models/visualization.py) 
 
 ## Demo of Unsupervised Evaluation on STS datasets
 
-Since SoftDecay is directly applied on output representation, and we can fix the function parameter $\alpha$ to define a decay function and get the transorformed representations for evaluation without training. (In supervised setting, $\alpha$ is trained under the task supervision to get better downstream task results.) This demo is mainly based on [WhiteningBERT repo](https://github.com/Jun-jie-Huang/WhiteningBERT). We have added the softDecay post-process method in the unsupervisedSTS(/unsupervisedSTS/)
+Since SoftDecay is directly applied on output representation, and we can fix the function parameter $\alpha$ to define a decay function and get the transorformed representations for evaluation without training. (In supervised setting, $\alpha$ is trained under the task supervision to get better downstream task results.) This demo is mainly based on [WhiteningBERT repo](https://github.com/Jun-jie-Huang/WhiteningBERT). We have added the softDecay post-process method in the [unsupervisedSTS directory](/unsupervisedSTS/)
 
 ```python
 
 #specify the PLTM/pooling method/layer_index/post_process(soft_decay or whitening)
 python evaluation_stsbenchmark.py --pooling aver --encoder_name bert-base-cased --last2avg --post_process soft_decay
 ```
-
+By changing the different PLTMs, you are suppposed to get the results below:
+<p align="center">
+<img src="sts_results.png"  width="650" align="center" >
+</p>
 ## Citation
 
 If you find our work useful, please cite as:
