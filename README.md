@@ -32,19 +32,21 @@ sys.path.insert(0,"/YourDir/tokenUni/src/")
 
 2. Pretrained Language Models + SoftDecay
 
-Our SoftDecay Transofmer code is in [this repo](/tokenUni/src/transformers/models/), including the AlBERT, BERT, DistilBERT, Roberta. Take BERT as an example, we modify the configuration file [configuration_bert.py](/tokenUni/src/transformers/models/bert/configuration_bert.py) and the modeling_bert.py[/tokenUni/src/transformers/models/bert/modeling_bert.py] to insert the SoftDecay function. And the SoftDecay function is defined in [soft_decay.py](tokenUni/src/transformers/models/soft_decay.py)
+Our SoftDecay Transofmer code is in [this repo](/src/transformers/models/), including the AlBERT, BERT, DistilBERT, Roberta. Take BERT as an example, we modify the configuration file [configuration_bert.py](/src/transformers/models/bert/configuration_bert.py) and the [modeling_bert.py](/src/transformers/models/bert/modeling_bert.py) to insert the SoftDecay function. And the SoftDecay function is defined in [soft_decay.py](/src/transformers/models/soft_decay.py)
 
 3. Visualization
 
 This code [visualization.py](tokenUni/src/transformers/models/visualization.py) is used to visualize the singular value distributions, i.e., the CDF and histgrams, as well as calculate the representation metrics. 
 
 
-## Demo of [Unsupervised Evaluation on STS datasets](/tokenUni/unsupervisedSTS/)
+## Demo of Unsupervised Evaluation on STS datasets
 
-Since SoftDecay is directly applied on output representation, and we can fix the function parameter $\alpha$ to define a decay function and get the transorformed representations for evaluation without training. (In supervised setting, $\alpha$ is trained under the task supervision to get better downstream task results.)
+Since SoftDecay is directly applied on output representation, and we can fix the function parameter $\alpha$ to define a decay function and get the transorformed representations for evaluation without training. (In supervised setting, $\alpha$ is trained under the task supervision to get better downstream task results.) This demo is mainly based on [WhiteningBERT repo](https://github.com/Jun-jie-Huang/WhiteningBERT). We have added the softDecay post-process method in the unsupervisedSTS(/unsupervisedSTS/)
 
 ```python
-python evaluation_stsbenchmark.py --pooling aver --encoder_name bert-base-cased --last2avg --post-process soft_decay
+
+#specify the PLTM/pooling method/layer_index/post_process(soft_decay or whitening)
+python evaluation_stsbenchmark.py --pooling aver --encoder_name bert-base-cased --last2avg --post_process soft_decay
 ```
 
 ## Citation
