@@ -1,5 +1,5 @@
 # Addressing Token Uniformity in Transformers via Singular Value Transformation
-UAI2022: Addressing Token Uniformity in Transformers via Singular Value Transformation 
+UAI2022: [Addressing Token Uniformity in Transformers via Singular Value Transformation](https://openreview.net/forum?id=BtUxE_8i5l5) 
 
 [Hanqi Yan](https://warwick.ac.uk/fac/sci/dcs/people/u2048587/), [Lin Gui](https://warwick.ac.uk/fac/sci/dcs/people/lin_gui/), [Wenjie Li](https://www4.comp.polyu.edu.hk/~cswjli/), [Yulan He](https://warwick.ac.uk/fac/sci/dcs/people/yulan_he/).
 
